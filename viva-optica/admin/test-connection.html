@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teste de Conexão - Viva Óptica</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .success { color: #10b981; }
+    .error { color: #ef4444; }
+    .warning { color: #f59e0b; }
+  </style>
+</head>
+<body class="bg-gray-100 p-8">
+  <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8">
+    <h1 class="text-3xl font-bold text-navy mb-6">🔍 Teste de Conexão - Viva Óptica</h1>
+
+    <div id="results" class="space-y-4">
+      <p class="text-gray-600">A executar testes...</p>
+    </div>
+
+    <div class="mt-8 pt-6 border-t">
+      <h2 class="text-xl font-bold mb-4">📋 Instruções:</h2>
+      <ol class="list-decimal list-inside space-y-2 text-gray-700">
+        <li>Se todos os testes estiverem verdes (✅), a configuração está correta</li>
+        <li>Se houver erros vermelhos (❌), siga as correções sugeridas</li>
+        <li>Copie os resultados e cole no console do navegador (F12) para mais detalhes</li>
+      </ol>
+    </div>
+  </div>
+
+  <script src="supabaseClient.js"></script>
+  <script>
+    const results = document.getElementById('results');
+
+    function addResult(title, status, message, suggestion = '') {
+      const icon = status === 'success' ? '✅' : status === 'warning' ? '⚠️' : '❌';
+      const color = status === 'success' ? 'success' : status === 'warning' ? 'warning' : 'error';
+
+      const div = document.createElement('div');
+      div.className = `p-4 rounded-lg border-l-4 ${color === 'success' ? 'bg-green-50 border-green-500' : color === 'warning' ? 'bg-yellow-50 border-yellow-500' : 'bg-red-50 border-red-500'}`;
+      div.innerHTML = `
+        <div class="font-bold ${color}">${icon} ${title}</div>
+        <div class="text-gray-700 mt-1">${message}</div>
+        ${suggestion ? `<div class="text-sm text-gray-500 mt-2 italic">💡 ${suggestion}</div>` : ''}
+      `;
+      results.appendChild(div);
+    }
+
+    async function runTests() {
+      results.innerHTML = '';
+
+      // Teste 1: Verificar Supabase Client
+      try {
+        const supabase = window.getSupabase();
+        if (supabase) {
+          addResult('Supabase Client', 'success', 'Cliente Supabase inicializado corretamente.');
+        } else {
+          addResult('Supabase Client', 'error', 'Cliente Supabase não inicializado.', 'Verifique se supabaseClient.js está carregado corretamente.');
+        }
+      } catch (error) {
+        addResult('Supabase Client', 'error', 'Erro ao inicializar: ' + error.message, 'Verifique o console para mais detalhes.');
+      }
+
+      // Teste 2: Verificar conexão com Supabase
+      try {
+        const supabase = window.getSupabase();
+        if (!supabase) throw new Error('Supabase não disponível');
+
+        const { data, error } = await supabase.from('configuracoes_loja').select('count', { count: 'exact', head: true });
+
+        if (error) {
+          if (error.message.includes('Invalid API key')) {
+            addResult('Conexão Supabase', 'error', 'Chave API inválida.', 'Verifique SUPABASE_ANON_KEY em supabaseClient.js');
+          } else if (error.message.includes('Network')) {
+            addResult('Conexão Supabase', 'error', 'Erro de rede.', 'Verifique sua conexão à internet.');
+          } else {
+            addResult('Conexão Supabase', 'warning', 'Conectado, mas erro na consulta: ' + error.message, 'Verifique se as tabelas existem no Supabase.');
+          }
+        } else {
+          addResult('Conexão Supabase', 'success', 'Conectado ao Supabase com sucesso!');
+        }
+      } catch (error) {
+        addResult('Conexão Supabase', 'error', 'Não foi possível conectar: ' + error.message, 'Verifique SUPABASE_URL e SUPABASE_ANON_KEY.');
+      }
+
+      // Teste 3: Verificar tabelas
+      try {
+        const supabase = window.getSupabase();
+        const tables = ['slideshow', 'produtos', 'configuracoes_loja', 'profiles'];
+
+        for (const table of tables) {
+          const { error } = await supabase.from(table).select('count', { count: 'exact', head: true });
+
+          if (error && error.message.includes('relation')) {
+            addResult(`Tabela ${table}`, 'error', 'Tabela não encontrada.', 'Execute o script database_schema.sql no Supabase.');
+          } else if (error) {
+            addResult(`Tabela ${table}`, 'warning', 'Tabela existe, mas há erro: ' + error.message, 'Verifique as RLS policies.');
+          } else {
+            addResult(`Tabela ${table}`, 'success', 'Tabela acessível.');
+          }
+        }
+      } catch (error) {
+        addResult('Verificação de Tabelas', 'error', 'Erro ao verificar tabelas: ' + error.message);
+      }
+
+      // Teste 4: Verificar localStorage
+      try {
+        localStorage.setItem('test', 'test');
+        localStorage.removeItem('test');
+        addResult('localStorage', 'success', 'localStorage disponível.');
+      } catch (error) {
+        addResult('localStorage', 'error', 'localStorage não disponível.', 'Verifique as configurações do navegador.');
+      }
+
+      // Teste 5: Informações do navegador
+      const userAgent = navigator.userAgent;
+      const language = navigator.language;
+      const online = navigator.onLine;
+
+      addResult('Navegador', 'success',
+        `User Agent: ${userAgent.substring(0, 50)}...<br>Idioma: ${language}<br>Online: ${online ? 'Sim' : 'Não'}`
+      );
+
+      // Teste final
+      addResult('Resumo', 'success',
+        'Se todos os testes principais estiverem verdes, o login deve funcionar corretamente.<br><br>' +
+        'Próximos passos:<br>' +
+        '1. Acesse login.html<br>' +
+        '2. Use o email: javelsoncanzenze7@gmail.com<br>' +
+        '3. Abra o console (F12) para ver os logs detalhados<br>' +
+        '4. Tente fazer login e verifique as mensagens no console'
+      );
+    }
+
+    // Executar testes ao carregar
+    runTests();
+  </script>
+</body>
+</html>
