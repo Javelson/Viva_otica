@@ -81,12 +81,63 @@
             produtosData = data || [];
             console.log(`✅ ${produtosData.length} produtos carregados`);
 
+            // Injetar JSON-LD para SEO (Google Rich Results)
+            injetarJsonLd(produtosData);
+
             // Renderizar produtos por padrão (todos)
             renderizarProdutos(produtosData);
         } catch (err) {
             console.error('❌ Erro excepcional:', err);
             mostrarErro('Erro ao carregar produtos: ' + err.message);
         }
+    }
+
+    // ========== INJETAR JSON-LD PARA SEO ==========
+    function injetarJsonLd(produtos) {
+        if (!produtos || produtos.length === 0) return;
+
+        const itemList = {
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            "name": "Catálogo de Produtos - Viva Óptica",
+            "url": "https://vivaoptica.vercel.app/paginas/produtos.html",
+            "numberOfItems": produtos.length,
+            "itemListElement": produtos
+                .filter(p => p.ativo !== false)
+                .map((p, index) => ({
+                    "@type": "ListItem",
+                    "position": index + 1,
+                    "item": {
+                        "@type": "Product",
+                        "name": p.nome,
+                        "description": p.descricao || p.nome,
+                        "image": p.imagem_url || undefined,
+                        "category": CATEGORY_LABELS[p.categoria] || p.categoria,
+                        "offers": {
+                            "@type": "Offer",
+                            "price": p.preco || 0,
+                            "priceCurrency": "AOA",
+                            "availability": (p.estoque > 0)
+                                ? "https://schema.org/InStock"
+                                : "https://schema.org/OutOfStock",
+                            "seller": {
+                                "@type": "Optician",
+                                "name": "Viva Óptica"
+                            }
+                        }
+                    }
+                }))
+        };
+
+        // Remover JSON-LD antigo de WebPage se existir
+        const existingWp = document.querySelector('script[type="application/ld+json"]');
+        if (existingWp) existingWp.remove();
+
+        const script = document.createElement('script');
+        script.type = 'application/ld+json';
+        script.textContent = JSON.stringify(itemList, null, 2);
+        document.head.appendChild(script);
+        console.log('✅ [SEO] JSON-LD de produtos injetado');
     }
 
     // ========== RENDERIZAR SKELETONS ==========
