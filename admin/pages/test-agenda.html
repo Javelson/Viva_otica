@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico - Agenda Viva Óptica</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="../supabaseClient.js"></script>
+    <link rel="stylesheet" href="../admin.css">
+    <style>
+        body { font-family: monospace; padding: 20px; background: #f5f5f5; }
+        .log { background: white; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #ccc; }
+        .log.success { border-left-color: green; }
+        .log.error { border-left-color: red; }
+        .log.info { border-left-color: blue; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Diagnóstico da Agenda</h1>
+    <p>Clique nos botões abaixo para testar cada componente:</p>
+
+    <button onclick="testSupabase()">1. Testar Supabase</button>
+    <button onclick="testAuth()">2. Testar Autenticação</button>
+    <button onclick="testTable()">3. Testar Tabela agendamentos</button>
+    <button onclick="testCalendar()">4. Testar Calendário</button>
+
+    <div id="results"></div>
+
+    <script>
+        function log(msg, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.innerHTML = `<strong>[${new Date().toLocaleTimeString()}]</strong> ${msg}`;
+            document.getElementById('results').prepend(div);
+            console.log(msg);
+        }
+
+        async function testSupabase() {
+            log('Testando Supabase...', 'info');
+            try {
+                if (typeof supabase === 'undefined') {
+                    log('❌ SDK Supabase não carregado!', 'error');
+                    return;
+                }
+                log('✅ SDK Supabase detectado', 'success');
+
+                if (!window.supabase) {
+                    log('❌ window.supabase não definido!', 'error');
+                    return;
+                }
+                log('✅ window.supabase disponível', 'success');
+
+                if (typeof window.supabase.from !== 'function') {
+                    log('❌ window.supabase.from() não é função!', 'error');
+                    return;
+                }
+                log('✅ window.supabase.from() disponível', 'success');
+            } catch (e) {
+                log(`❌ Erro: ${e.message}`, 'error');
+            }
+        }
+
+        async function testAuth() {
+            log('Testando autenticação...', 'info');
+            try {
+                const supabase = await window.getSupabase();
+                const { data: { session }, error } = await supabase.auth.getSession();
+
+                if (error) {
+                    log(`❌ Erro auth: ${error.message}`, 'error');
+                    return;
+                }
+
+                if (!session) {
+                    log('❌ Nenhuma sessão ativa - usuário não logado!', 'error');
+                    log('💡 Redirecione para login.html', 'info');
+                    return;
+                }
+
+                log(`✅ Usuário logado: ${session.user.email}`, 'success');
+            } catch (e) {
+                log(`❌ Erro: ${e.message}`, 'error');
+            }
+        }
+
+        async function testTable() {
+            log('Testando tabela agendamentos...', 'info');
+            try {
+                const supabase = await window.getSupabase();
+                const { data, error, count } = await supabase
+                    .from('agendamentos')
+                    .select('*', { count: 'exact' })
+                    .limit(5);
+
+                if (error) {
+                    log(`❌ Erro na tabela: ${error.message}`, 'error');
+                    if (error.message.includes('does not exist')) {
+                        log('💡 Tabela agendamentos não existe! Execute o SQL no Supabase.', 'error');
+                    }
+                    return;
+                }
+
+                log(`✅ Tabela agendamentos OK! ${count || 0} registros encontrados.`, 'success');
+                if (data && data.length > 0) {
+                    log(`📋 Amostra: ${JSON.stringify(data[0]).substring(0, 100)}...`, 'info');
+                }
+            } catch (e) {
+                log(`❌ Erro: ${e.message}`, 'error');
+            }
+        }
+
+        async function testCalendar() {
+            log('Testando renderização do calendário...', 'info');
+            try {
+                // Verificar se elementos existem
+                const calContainer = document.getElementById('calendario-dias');
+                if (!calContainer) {
+                    log('❌ Elemento calendario-dias não encontrado na página!', 'error');
+                } else {
+                    log('✅ Container do calendário encontrado', 'success');
+                }
+
+                const statsContainer = document.getElementById('stat-agendados');
+                if (!statsContainer) {
+                    log('❌ Elementos de estatísticas não encontrados!', 'error');
+                } else {
+                    log('✅ Elementos de estatísticas encontrados', 'success');
+                }
+            } catch (e) {
+                log(`❌ Erro: ${e.message}`, 'error');
+            }
+        }
+
+        // Auto-testar ao carregar
+        window.addEventListener('load', () => {
+            log('Página carregada. Clique nos botões para testar.', 'info');
+        });
+    </script>
+</body>
+</html>

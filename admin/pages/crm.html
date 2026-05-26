@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM de Re-engajamento - Viva Óptica Admin</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../admin.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-slide-in { animation: slideIn 0.3s ease-out; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Sidebar -->
+    <aside class="fixed left-0 top-0 h-full w-64 admin-sidebar text-white overflow-y-auto">
+        <div class="p-6">
+            <h1 class="text-2xl font-bold">Viva Óptica</h1>
+            <p class="text-sm text-gray-400 mt-1">Painel Administrativo</p>
+        </div>
+
+        <nav class="mt-6">
+            <a href="../index.html" class="sidebar-item flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                <i class="fa-solid fa-chart-line w-6"></i>
+                <span class="ml-3">Dashboard</span>
+            </a>
+            <a href="pages/agendamentos.html" class="sidebar-item flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                <i class="fa-regular fa-calendar-check w-6"></i>
+                <span class="ml-3">Agendamentos</span>
+            </a>
+            <a href="pages/prontuario.html" class="sidebar-item flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                <i class="fa-solid fa-file-medical w-6"></i>
+                <span class="ml-3">Prontuário Digital</span>
+            </a>
+            <a href="pages/laboratorio.html" class="sidebar-item flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                <i class="fa-solid fa-industry w-6"></i>
+                <span class="ml-3">Laboratório</span>
+            </a>
+            <a href="pages/estoque.html" class="sidebar-item flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                <i class="fa-solid fa-warehouse w-6"></i>
+                <span class="ml-3">Estoque Inteligente</span>
+            </a>
+            <a href="pages/agenda.html" class="sidebar-item flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                <i class="fa-solid fa-calendar-days w-6"></i>
+                <span class="ml-3">Agenda Consultas</span>
+            </a>
+            <a href="pages/crm.html" class="sidebar-item active flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                <i class="fa-solid fa-users w-6"></i>
+                <span class="ml-3">CRM Re-engajamento</span>
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-white/10">
+            <a href="../index.html" target="_blank" class="flex items-center text-sm text-gray-400 hover:text-white transition-colors mb-3">
+                <i class="fa-solid fa-external-link-alt w-6"></i>
+                <span class="ml-3">Ver Site</span>
+            </a>
+            <button onclick="logout()" class="flex items-center text-sm text-red-400 hover:text-red-300 transition-colors w-full">
+                <i class="fa-solid fa-sign-out-alt w-6"></i>
+                <span class="ml-3">Terminar Sessão</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="ml-64 p-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-navy">CRM de Re-engajamento</h1>
+                <p class="text-gray-600 mt-1">Gestão de fidelização e re-ativação de clientes</p>
+            </div>
+            <button onclick="gerarAlertas()" class="admin-btn-primary px-6 py-3 rounded-lg font-medium transition-colors flex items-center">
+                <i class="fa-solid fa-rotate mr-2"></i>
+                Atualizar Alertas
+            </button>
+        </div>
+
+        <!-- Estatísticas -->
+        <div class="grid grid-cols-5 gap-6 mb-8">
+            <div class="admin-card p-6 border-l-4 border-red-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Urgentes</p>
+                        <p class="text-3xl font-bold text-navy" id="stat-urgente">0</p>
+                        <p class="text-xs text-red-500 mt-1">365+ dias</p>
+                    </div>
+                    <div class="bg-red-100 text-red-600 w-12 h-12 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-exclamation-triangle text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-card p-6 border-l-4 border-orange-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Em Risco</p>
+                        <p class="text-3xl font-bold text-navy" id="stat-risco">0</p>
+                        <p class="text-xs text-orange-500 mt-1">180-364 dias</p>
+                    </div>
+                    <div class="bg-orange-100 text-orange-600 w-12 h-12 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-clock text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-card p-6 border-l-4 border-purple-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Clientes VIP</p>
+                        <p class="text-3xl font-bold text-navy" id="stat-vip">0</p>
+                        <p class="text-xs text-purple-500 mt-1">Top fidelidade</p>
+                    </div>
+                    <div class="bg-purple-100 text-purple-600 w-12 h-12 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-crown text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-card p-6 border-l-4 border-blue-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Aniversariantes</p>
+                        <p class="text-3xl font-bold text-navy" id="stat-aniversario">0</p>
+                        <p class="text-xs text-blue-500 mt-1">Próximos 30 dias</p>
+                    </div>
+                    <div class="bg-blue-100 text-blue-600 w-12 h-12 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-birthday-cake text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-card p-6 border-l-4 border-green-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Ticket Médio</p>
+                        <p class="text-2xl font-bold text-navy" id="stat-ticket">Kz 0</p>
+                        <p class="text-xs text-green-500 mt-1">Por cliente</p>
+                    </div>
+                    <div class="bg-green-100 text-green-600 w-12 h-12 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-chart-line text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="admin-card mb-8">
+            <div class="border-b">
+                <nav class="flex -mb-px px-6">
+                    <button onclick="switchTab('alertas')" id="tab-alertas" class="tab-button border-b-2 border-cyan text-cyan px-6 py-4 font-medium text-sm">
+                        <i class="fa-solid fa-bell mr-2"></i>
+                        Alertas Pendentes
+                        <span class="ml-2 bg-red-500 text-white px-2 py-0.5 rounded-full text-xs" id="alert-badge">0</span>
+                    </button>
+                    <button onclick="switchTab('fieis')" id="tab-fieis" class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 px-6 py-4 font-medium text-sm">
+                        <i class="fa-solid fa-star mr-2"></i>
+                        Clientes Fiéis
+                    </button>
+                    <button onclick="switchTab('aniversario')" id="tab-aniversario" class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 px-6 py-4 font-medium text-sm">
+                        <i class="fa-solid fa-calendar mr-2"></i>
+                        Aniversariantes
+                    </button>
+                    <button onclick="switchTab('campanhas')" id="tab-campanhas" class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 px-6 py-4 font-medium text-sm">
+                        <i class="fa-solid fa-bullhorn mr-2"></i>
+                        Campanhas
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Conteúdo: Alertas -->
+            <div id="content-alertas" class="tab-content p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-navy">Alertas de Re-engajamento</h2>
+                    <div class="flex gap-3">
+                        <select id="filter-prioridade" onchange="filterAlertas()" class="admin-input">
+                            <option value="">Todas as prioridades</option>
+                            <option value="urgent">Urgente</option>
+                            <option value="high">Alta</option>
+                            <option value="medium">Média</option>
+                            <option value="low">Baixa</option>
+                        </select>
+                        <select id="filter-tipo" onchange="filterAlertas()" class="admin-input">
+                            <option value="">Todos os tipos</option>
+                            <option value="tempo_sem_compra">Sem Compra</option>
+                            <option value="tempo_sem_exame">Sem Exame</option>
+                            <option value="aniversario">Aniversário</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6" id="alertas-list">
+                    <!-- Preenchido via JavaScript -->
+                </div>
+            </div>
+
+            <!-- Conteúdo: Clientes Fiéis -->
+            <div id="content-fieis" class="tab-content hidden p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-navy">Clientes VIP e Fiéis</h2>
+                    <select id="filter-nivel" onchange="filterFieis()" class="admin-input">
+                        <option value="">Todos os níveis</option>
+                        <option value="VIP">VIP</option>
+                        <option value="fiel">Fiel</option>
+                        <option value="regular">Regular</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-3 gap-6" id="fieis-list">
+                    <!-- Preenchido via JavaScript -->
+                </div>
+            </div>
+
+            <!-- Conteúdo: Aniversariantes -->
+            <div id="content-aniversario" class="tab-content hidden p-6">
+                <h2 class="text-xl font-bold text-navy mb-6">Clientes Aniversariantes (Próximos 30 dias)</h2>
+                <div class="grid grid-cols-2 gap-6" id="aniversario-list">
+                    <!-- Preenchido via JavaScript -->
+                </div>
+            </div>
+
+            <!-- Conteúdo: Campanhas -->
+            <div id="content-campanhas" class="tab-content hidden p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-navy">Campanhas de Marketing</h2>
+                    <button onclick="openModal('campanha')" class="admin-btn-primary px-4 py-2 rounded-lg text-sm font-medium">
+                        <i class="fa-solid fa-plus mr-2"></i>
+                        Nova Campanha
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6" id="campanhas-list">
+                    <!-- Preenchido via JavaScript -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal: Enviar Mensagem -->
+    <div id="mensagem-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-navy">Enviar Mensagem</h3>
+                    <button onclick="closeModal('mensagem')" class="text-gray-400 hover:text-gray-600">
+                        <i class="fa-solid fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <form id="mensagem-form" class="p-6">
+                <input type="hidden" id="mensagem-cliente-id">
+                <input type="hidden" id="mensagem-alerta-id">
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Cliente</label>
+                        <input type="text" id="mensagem-cliente-nome" class="w-full admin-input bg-gray-50" readonly>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Canal *</label>
+                        <select id="mensagem-canal" required class="w-full admin-input">
+                            <option value="whatsapp">WhatsApp</option>
+                            <option value="sms">SMS</option>
+                            <option value="email">Email</option>
+                            <option value="ligacao">Ligação Telefônica</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Mensagem *</label>
+                        <textarea id="mensagem-texto" required rows="5" class="w-full admin-input" placeholder="Digite sua mensagem..."></textarea>
+                        <p class="text-xs text-gray-500 mt-1">Dica: Personalize com o nome do cliente e uma oferta especial.</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 mt-6">
+                    <button type="submit" class="flex-1 admin-btn-primary px-6 py-3 rounded-lg font-medium transition-colors">
+                        <i class="fa-solid fa-paper-plane mr-2"></i>
+                        Enviar
+                    </button>
+                    <button type="button" onclick="closeModal('mensagem')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium transition-colors">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-3"></div>
+
+    <!-- Scripts -->
+    <script src="../js/supabaseClient.js"></script>
+    <script src="js/crm.js"></script>
+</body>
+</html>

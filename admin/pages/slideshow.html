@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slideshow | Admin - Viva Óptica</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="../admin.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: '#0D1B2E',
+            cyan: '#00aadc',
+            magenta: '#e91e8c',
+            yellow: '#f5c800',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-50">
+  <div class="flex h-screen overflow-hidden">
+    <!-- Sidebar (incluir via JS ou iframe do admin principal) -->
+    <aside class="w-64 admin-sidebar text-white flex-shrink-0 hidden md:flex flex-col">
+      <div class="p-6 border-b border-white/10 text-center">
+        <img src="../Logo/viva_logo_branco.jpeg" alt="Viva Óptica Logo" class="h-12 mx-auto mb-3 bg-white rounded-lg p-2">
+        <p class="text-xs text-gray-400">Painel Admin</p>
+      </div>
+      <nav class="flex-1 overflow-y-auto py-4">
+        <a href="index.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+          <i class="fa-solid fa-chart-line w-6"></i>
+          <span class="ml-3">Dashboard</span>
+        </a>
+        <a href="slideshow.html" class="flex items-center px-6 py-3 text-sm bg-cyan/20 border-r-3 border-cyan transition-colors">
+          <i class="fa-solid fa-images w-6"></i>
+          <span class="ml-3">Slideshow</span>
+        </a>
+        <a href="produtos.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+          <i class="fa-solid fa-box w-6"></i>
+          <span class="ml-3">Produtos</span>
+        </a>
+        <a href="configuracoes.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+          <i class="fa-solid fa-cog w-6"></i>
+          <span class="ml-3">Configurações</span>
+        </a>
+        <a href="#" onclick="logout()" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+          <i class="fa-solid fa-sign-out-alt w-6"></i>
+          <span class="ml-3">Logout</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- Header -->
+      <header class="bg-white shadow-sm border-b admin-header">
+        <div class="px-6 py-4 flex items-center justify-between">
+          <h1 class="text-2xl font-bold text-navy">Gestão do Slideshow</h1>
+          <button onclick="openModal()" class="admin-btn-primary px-6 py-2 rounded-lg font-medium transition-colors flex items-center">
+            <i class="fa-solid fa-plus mr-2"></i>
+            Adicionar Slide
+          </button>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <main class="flex-1 overflow-y-auto p-6">
+        <!-- Loading -->
+        <div id="loading" class="hidden flex items-center justify-center h-64">
+          <div class="animate-spin rounded-full h-12 w-12 border-4 border-cyan border-t-transparent"></div>
+        </div>
+
+        <!-- Slides List -->
+        <div id="slides-container" class="space-y-4">
+          <!-- Slides serão renderizados aqui com drag-and-drop -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="hidden text-center py-12">
+          <i class="fa-solid fa-images text-6xl text-gray-300 mb-4"></i>
+          <p class="text-gray-500 text-lg">Nenhum slide adicionado ainda.</p>
+          <button onclick="openModal()" class="mt-4 text-cyan hover:text-cyanLight font-medium">
+            Adicionar o primeiro slide
+          </button>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal de Adicionar/Editar Slide -->
+  <div id="slide-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-6 border-b">
+        <h2 id="modal-title" class="text-2xl font-bold text-navy">Adicionar Slide</h2>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+          <i class="fa-solid fa-times text-xl"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <form id="slide-form" class="p-6 space-y-6">
+        <input type="hidden" id="slide-id">
+
+        <!-- Upload de Imagem -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Imagem do Slide *</label>
+          <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-cyan transition-colors">
+            <input type="file" id="slide-image" accept="image/*" class="hidden" onchange="handleImageSelect(event)">
+            <button type="button" onclick="document.getElementById('slide-image').click()" class="text-cyan hover:text-cyanLight font-medium">
+              <i class="fa-solid fa-upload mr-2"></i>Escolher Imagem
+            </button>
+            <p class="text-xs text-gray-500 mt-2">JPG, PNG, WEBP ou GIF (máx. 5MB)</p>
+          </div>
+          <!-- Preview -->
+          <div id="image-preview-container" class="mt-4 hidden">
+            <img id="image-preview" src="" alt="Preview" class="max-h-48 mx-auto rounded-lg shadow-md">
+            <button type="button" onclick="clearImage()" class="mt-2 text-red-500 hover:text-red-600 text-sm">
+              <i class="fa-solid fa-trash mr-1"></i>Remover imagem
+            </button>
+          </div>
+        </div>
+
+        <!-- Título -->
+        <div>
+          <label for="slide-titulo" class="block text-sm font-medium text-gray-700 mb-2">Título *</label>
+          <input type="text" id="slide-titulo" required
+            class="w-full px-4 py-2 admin-input focus:border-transparent">
+        </div>
+
+        <!-- Subtítulo -->
+        <div>
+          <label for="slide-subtitulo" class="block text-sm font-medium text-gray-700 mb-2">Subtítulo</label>
+          <input type="text" id="slide-subtitulo"
+            class="w-full px-4 py-2 admin-input focus:border-transparent">
+        </div>
+
+        <!-- Link -->
+        <div>
+          <label for="slide-link" class="block text-sm font-medium text-gray-700 mb-2">Link (opcional)</label>
+          <input type="text" id="slide-link" placeholder="index.html"
+            class="w-full px-4 py-2 admin-input focus:border-transparent">
+        </div>
+
+        <!-- Ordem -->
+        <div>
+          <label for="slide-ordem" class="block text-sm font-medium text-gray-700 mb-2">Ordem</label>
+          <input type="number" id="slide-ordem" value="0" min="0"
+            class="w-full px-4 py-2 admin-input focus:border-transparent">
+        </div>
+
+        <!-- Ativo -->
+        <div class="flex items-center">
+          <input type="checkbox" id="slide-ativo" checked
+            class="h-4 w-4 text-cyan focus:ring-cyan border-gray-300 rounded">
+          <label for="slide-ativo" class="ml-2 block text-sm text-gray-700">
+            Ativo (mostrar no site)
+          </label>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-end space-x-4 pt-4 border-t">
+          <button type="button" onclick="closeModal()"
+            class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+            Cancelar
+          </button>
+          <button type="submit" id="save-btn"
+            class="px-6 py-2 admin-btn-primary rounded-lg font-medium transition-colors flex items-center">
+            <i class="fa-solid fa-save mr-2"></i>
+            <span>Salvar</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed bottom-8 left-8 z-50"></div>
+
+  <!-- Scripts -->
+  <script src="../supabaseClient.js"></script>
+  <script src="../js/upload.js"></script>
+  <script src="js/slideshow.js"></script>
+</body>
+</html>

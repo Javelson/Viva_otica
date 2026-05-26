@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sobre Nós | Viva Óptica</title>
+
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- AOS Library para animações ao scroll -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: '#1a2a4a',
+                        cyan: '#00aadc',
+                        magenta: '#e91e8c',
+                        yellow: '#f5c800',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body class="font-sans text-gray-900 bg-white" data-page-name="sobre">
+
+    <!-- ========== NAVBAR ========== -->
+    <nav class="bg-white sticky top-0 z-50 shadow-md border-b-2 border-cyan">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <!-- Logo -->
+                <div class="flex-shrink-0">
+                    <a href="../index.html" class="flex items-center">
+                        <img src="../Logo/viva_logo_branco.jpeg" alt="Viva Óptica" class="h-12 w-auto object-contain">
+                    </a>
+                </div>
+
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="../index.html" class="text-navy hover:text-cyan transition-colors font-medium">Início</a>
+                    <a href="produtos.html" class="text-navy hover:text-cyan transition-colors font-medium">Produtos</a>
+                    <a href="servicos.html" class="text-navy hover:text-cyan transition-colors font-medium">Serviços</a>
+                    <a href="sobre.html" class="text-cyan font-bold border-b-2 border-cyan pb-1">Sobre</a>
+                    <a href="contacto.html" class="text-navy hover:text-cyan transition-colors font-medium">Contacto</a>
+                    <a href="../agendamento.html" class="bg-cyan text-white px-6 py-2 rounded-full font-semibold hover:bg-cyan/90 transition-colors">Agendar</a>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <button id="mobile-menu-btn" class="md:hidden text-navy hover:text-cyan">
+                    <i class="fas fa-bars text-2xl"></i>
+                </button>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div id="mobile-menu" class="hidden md:hidden border-t border-gray-200">
+                <div class="px-4 py-4 space-y-3">
+                    <a href="../index.html" class="block text-navy hover:text-cyan font-medium">Início</a>
+                    <a href="produtos.html" class="block text-navy hover:text-cyan font-medium">Produtos</a>
+                    <a href="servicos.html" class="block text-navy hover:text-cyan font-medium">Serviços</a>
+                    <a href="sobre.html" class="block text-cyan font-bold">Sobre</a>
+                    <a href="contacto.html" class="block text-navy hover:text-cyan font-medium">Contacto</a>
+                    <a href="../agendamento.html" class="block bg-cyan text-white px-4 py-2 rounded-full font-semibold text-center">Agendar</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="bg-gradient-to-r from-navy to-cyan/80 py-20 text-center text-white">
+            <div class="max-w-4xl mx-auto px-4" data-aos="fade-up">
+                <h1 id="page-title" class="text-4xl md:text-5xl font-bold mb-4">Quem Somos</h1>
+                <p id="page-intro" class="mt-6 text-lg text-gray-100 italic">"Ajudamos pessoas a enxergar o mundo com mais nitidez, estilo e qualidade de vida."</p>
+            </div>
+        </section>
+
+        <!-- Conteúdo da Página -->
+        <section id="page-content" class="py-20 bg-white overflow-hidden">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                    <div class="order-2 lg:order-1" data-aos="fade-right">
+                        <h2 class="text-3xl font-bold text-navy mb-6">A Nossa Missão</h2>
+                        <p class="text-gray-600 leading-relaxed mb-6 text-lg">
+                            A Viva Óptica nasceu com a missão de cuidar da saúde visual da nossa comunidade com profissionalismo, tecnologia e atendimento humanizado. Acreditamos que ver bem é viver melhor — por isso trabalhamos diariamente para oferecer soluções completas em saúde ocular e estética visual.
+                        </p>
+                        <p class="text-gray-600 leading-relaxed text-lg">
+                            Contamos com uma equipa dedicada e qualificada, preparada para realizar consultas de optometria, graduação precisa de lentes e aconselhamento personalizado para cada cliente. Unimos equipamentos modernos, produtos de qualidade e um atendimento próximo para garantir conforto, confiança e satisfação em cada visita.
+                        </p>
+                    </div>
+                    <div class="order-1 lg:order-2 relative" data-aos="fade-left">
+                        <!-- Placeholder para imagem de equipa/loja -->
+                        <div class="aspect-video rounded-2xl bg-gray-200 shadow-2xl overflow-hidden">
+                            <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=800&q=80" alt="Equipa Viva Óptica" class="w-full h-full object-cover">
+                        </div>
+                        <div class="absolute -bottom-6 -left-6 bg-cyan p-6 rounded-xl shadow-xl hidden md:block">
+                            <p class="text-navy font-bold text-2xl">100%</p>
+                            <p class="text-navy text-sm">Compromisso com você</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Valores Section -->
+        <section class="py-20 bg-gray-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16" data-aos="fade-up">
+                    <h2 class="text-3xl font-bold text-navy mb-4">Os Nossos Pilares</h2>
+                    <p class="text-gray-600">O que nos guia em cada atendimento.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <!-- Pilar 1 -->
+                    <div class="bg-white p-8 rounded-2xl shadow-sm text-center hover:shadow-md transition-shadow" data-aos="zoom-in" data-aos-delay="100">
+                        <div class="w-16 h-16 bg-cyan/10 text-cyan rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">
+                            <i class="fa-solid fa-microscope"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-navy mb-3">Tecnologia</h3>
+                        <p class="text-gray-600">Equipamentos modernos para garantir a máxima precisão na sua graduação.</p>
+                    </div>
+
+                    <!-- Pilar 2 -->
+                    <div class="bg-white p-8 rounded-2xl shadow-sm text-center hover:shadow-md transition-shadow" data-aos="zoom-in" data-aos-delay="200">
+                        <div class="w-16 h-16 bg-magenta/10 text-magenta rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">
+                            <i class="fa-solid fa-heart"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-navy mb-3">Atendimento Humanizado</h3>
+                        <p class="text-gray-600">Um cuidado próximo e personalizado, focado no seu conforto e bem-estar.</p>
+                    </div>
+
+                    <!-- Pilar 3 -->
+                    <div class="bg-white p-8 rounded-2xl shadow-sm text-center hover:shadow-md transition-shadow" data-aos="zoom-in" data-aos-delay="300">
+                        <div class="w-16 h-16 bg-yellow/10 text-yellow rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">
+                            <i class="fa-solid fa-award"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-navy mb-3">Profissionalismo</h3>
+                        <p class="text-gray-600">Equipa qualificada para oferecer soluções completas em saúde ocular.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Final -->
+        <section class="py-20 bg-navy text-center text-white">
+            <div class="max-w-3xl mx-auto px-4" data-aos="fade-up">
+                <h2 class="text-3xl font-bold mb-6">O Futuro é Mais Nítido Aqui</h2>
+                <p class="text-gray-300 mb-10">Pronto para ver o mundo com uma nova clareza? Agende a sua consulta agora mesmo.</p>
+                <a href="../agendamento.html" class="bg-cyan text-navy px-10 py-4 rounded-full font-bold text-lg hover:bg-white transition-all shadow-xl">
+                    Agendar Exame de Vista
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <!-- WhatsApp Floating Button -->
+    <a href="https://wa.me/244954145065" target="_blank" class="fixed bottom-8 right-8 bg-green-500 text-white w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-2xl hover:scale-110 transition-transform z-50 animate-bounce">
+        <i class="fa-brands fa-whatsapp"></i>
+    </a>
+
+    <footer class="bg-navy text-white py-12 mt-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left mb-8">
+                <div>
+                    <h3 class="font-bold text-lg mb-3 text-cyan">Viva Óptica</h3>
+                    <p class="text-gray-300">Sua visão é nossa prioridade.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-3 text-cyan">Links Rápidos</h3>
+                    <ul class="text-gray-300 space-y-2">
+                        <li><a href="../index.html" class="hover:text-cyan transition-colors">Início</a></li>
+                        <li><a href="servicos.html" class="hover:text-cyan transition-colors">Serviços</a></li>
+                        <li><a href="contacto.html" class="hover:text-cyan transition-colors">Contacto</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-3 text-cyan">Contacte-nos</h3>
+                    <p class="text-gray-300">
+                        <i class="fas fa-phone text-cyan mr-2"></i>+244 954 145 065<br>
+                        <i class="fas fa-envelope text-cyan mr-2"></i>info@vivaoptica.ao
+                    </p>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 pt-8 text-center text-gray-400">
+                <p>&copy; 2026 Viva Óptica. Todos os direitos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="../script.js"></script>
+    <script src="../page-content.js"></script>
+</body>
+</html>

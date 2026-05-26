@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Produtos | Admin - Viva Óptica</title>
+  <!-- Supabase JS Library (local fallback) -->
+  <script src="js/libs/supabase.min.js"></script>
+  <!-- Supabase Client -->
+  <script src="../../supabaseClient.js"></script>
+  <!-- Tailwind CSS (local) -->
+  <link rel="stylesheet" href="../../css/tailwind.css">
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="../admin.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: '#0D1B2E',
+            cyan: '#00aadc',
+            magenta: '#e91e8c',
+            yellow: '#f5c800',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .fade-in { animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .slide-up { animation: slideUp 0.3s ease-out; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .field-error { border-color: #ef4444 !important; }
+    .field-error:focus { box-shadow: 0 0 0 2px rgba(239,68,68,0.25) !important; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
+    .card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .upload-zone { border: 2px dashed #d1d5db; transition: all 0.2s ease; }
+    .upload-zone:hover, .upload-zone.drag-over { border-color: #00aadc; background: rgba(0,170,220,0.04); }
+  </style>
+</head>
+<body class="bg-gray-50 font-sans">
+
+  <!-- ============================================ -->
+  <!-- ESTRUTURA DE UM PRODUTO (JavaScript)         -->
+  <!-- ============================================ -->
+  <!--
+    {
+      id: "prod_001",              // ID único
+      nome: "Ray-Ban Aviador",     // Nome do produto
+      preco: 45000,                // Preço em Kwanza
+      categoria: "armação",        // Categoria: armação | lente | acessório
+      estoque: 12,                 // Quantidade em estoque
+      imagem: "url-da-imagem"      // URL da imagem (ou base64)
+    }
+  -->
+
+  <div class="flex h-screen overflow-hidden">
+
+    <!-- ==================== -->
+    <!-- Sidebar              -->
+    <!-- ==================== -->
+    <aside id="sidebar" class="w-64 admin-sidebar text-white flex-shrink-0 hidden md:flex flex-col">
+      <div class="p-6 border-b border-white/10 text-center">
+        <img src="../Logo/viva_logo_branco.jpeg" alt="Viva Óptica Logo" class="h-12 mx-auto mb-3 bg-white rounded-lg p-2">
+        <p class="text-xs text-gray-400">Painel Admin</p>
+      </div>
+
+      <nav class="flex-1 overflow-y-auto py-4">
+        <a href="../index.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+          <i class="fa-solid fa-chart-line w-6"></i>
+          <span class="ml-3">Dashboard</span>
+        </a>
+        <a href="produtos.html" class="sidebar-active flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+          <i class="fa-solid fa-box w-6"></i>
+          <span class="ml-3">Produtos</span>
+        </a>
+        <a href="agenda.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+          <i class="fa-solid fa-calendar-check w-6"></i>
+          <span class="ml-3">Agendamentos</span>
+        </a>
+        <a href="crm.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+          <i class="fa-solid fa-users w-6"></i>
+          <span class="ml-3">Clientes</span>
+        </a>
+        <a href="configuracoes.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+          <i class="fa-solid fa-cog w-6"></i>
+          <span class="ml-3">Configurações</span>
+        </a>
+      </nav>
+
+      <div class="p-4 border-t border-white/10">
+        <button id="logout-btn" class="w-full flex items-center justify-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors">
+          <i class="fa-solid fa-sign-out-alt mr-2"></i>
+          <span>Sair</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ==================== -->
+    <!-- Conteúdo Principal   -->
+    <!-- ==================== -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+
+      <!-- Header -->
+      <header class="bg-white shadow-sm px-6 py-4 flex items-center justify-between admin-header">
+        <div class="flex items-center">
+          <button id="mobile-menu-btn" class="md:hidden text-gray-600 mr-4">
+            <i class="fa-solid fa-bars text-xl"></i>
+          </button>
+          <h1 class="text-xl font-semibold text-gray-800">Produtos</h1>
+          <span id="product-count" class="ml-3 px-2.5 py-0.5 text-xs font-semibold bg-cyan/10 text-cyan rounded-full">0</span>
+        </div>
+        <button id="btn-novo-produto" class="admin-btn-primary px-5 py-2.5 rounded-lg font-medium transition-colors flex items-center shadow-sm shadow-cyan/20">
+          <i class="fa-solid fa-plus mr-2"></i>
+          + Adicionar Novo Produto
+        </button>
+      </header>
+
+      <!-- Main -->
+      <main class="flex-1 overflow-y-auto p-6">
+
+        <!-- Filtros -->
+        <div class="admin-card p-4 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <label class="text-sm font-medium text-gray-700 whitespace-nowrap">Filtrar por categoria:</label>
+            <select id="category-filter" class="px-4 py-2 admin-input">
+              <option value="">Todas</option>
+              <option value="armação">Armação</option>
+              <option value="lente">Lente</option>
+              <option value="acessório">Acessório</option>
+            </select>
+          </div>
+          <div class="relative">
+            <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+            <input type="text" id="search-input" placeholder="Pesquisar produto..." class="pl-9 pr-4 py-2 admin-input w-full sm:w-64">
+          </div>
+        </div>
+
+        <!-- Grid de Cards (renderizado via JS) -->
+        <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          <!-- Cards inseridos via JavaScript -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="hidden text-center py-20">
+          <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fa-solid fa-box-open text-3xl text-gray-300"></i>
+          </div>
+          <p class="text-gray-500 text-lg font-medium">Nenhum produto encontrado</p>
+          <p class="text-gray-400 text-sm mt-1">Comece adicionando o primeiro produto</p>
+          <button id="btn-empty-add" class="mt-4 text-cyan hover:text-cyan/80 font-medium text-sm">
+            <i class="fa-solid fa-plus mr-1"></i>Adicionar produto
+          </button>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- Modal: Adicionar / Editar Produto            -->
+  <!-- ============================================ -->
+  <div id="product-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <!-- Overlay -->
+    <div id="modal-overlay" class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+
+    <!-- Conteúdo do Modal -->
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg slide-up max-h-[90vh] flex flex-col">
+      <!-- Header -->
+      <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
+        <h2 id="modal-title" class="text-lg font-bold text-navy flex items-center">
+          <i class="fa-solid fa-plus-circle text-cyan mr-2"></i>
+          Novo Produto
+        </h2>
+        <button id="btn-close-modal" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Formulário -->
+      <form id="product-form" class="px-6 py-5 space-y-5 overflow-y-auto">
+        <input type="hidden" id="product-id">
+
+        <!-- Nome -->
+        <div>
+          <label for="product-nome" class="block text-sm font-medium text-gray-700 mb-1.5">Nome do Produto *</label>
+          <input type="text" id="product-nome" required placeholder="Ex: Ray-Ban Aviador"
+            class="w-full px-4 py-2.5 admin-input">
+        </div>
+
+        <!-- Categoria + Preço (lado a lado) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="product-categoria" class="block text-sm font-medium text-gray-700 mb-1.5">Categoria *</label>
+            <select id="product-categoria" required
+              class="w-full px-4 py-2.5 admin-input bg-white">
+              <option value="">Selecionar...</option>
+              <option value="armação">Armação</option>
+              <option value="lente">Lente</option>
+              <option value="acessório">Acessório</option>
+            </select>
+          </div>
+          <div>
+            <label for="product-preco" class="block text-sm font-medium text-gray-700 mb-1.5">Preço (Kz) *</label>
+            <input type="number" id="product-preco" required min="0" step="0.01" placeholder="45000"
+              class="w-full px-4 py-2.5 admin-input">
+          </div>
+        </div>
+
+        <!-- Quantidade em Estoque -->
+        <div>
+          <label for="product-estoque" class="block text-sm font-medium text-gray-700 mb-1.5">Quantidade em Estoque *</label>
+          <input type="number" id="product-estoque" required min="0" step="1" placeholder="0"
+            class="w-full px-4 py-2.5 admin-input">
+        </div>
+
+        <!-- Upload de Imagem -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">Imagem do Produto</label>
+          <div id="upload-zone" class="upload-zone rounded-lg p-6 text-center cursor-pointer relative">
+            <input type="file" id="product-imagem" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+            <!-- Preview (escondido por padrão) -->
+            <div id="image-preview" class="hidden">
+              <img id="preview-img" src="" alt="Preview" class="w-24 h-24 object-cover rounded-lg mx-auto mb-2">
+              <button type="button" id="btn-remove-image" class="text-xs text-red-500 hover:text-red-700 font-medium">
+                <i class="fa-solid fa-trash mr-1"></i>Remover imagem
+              </button>
+            </div>
+            <!-- Placeholder -->
+            <div id="upload-placeholder">
+              <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fa-solid fa-cloud-arrow-up text-xl text-gray-400"></i>
+              </div>
+              <p class="text-sm text-gray-500">Clique ou arraste para enviar</p>
+              <p class="text-xs text-gray-400 mt-1">PNG, JPG até 5MB</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botões -->
+        <div class="flex justify-end gap-3 pt-2 border-t border-gray-100 flex-shrink-0">
+          <button type="button" id="btn-cancel"
+            class="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+            Cancelar
+          </button>
+          <button type="submit" id="btn-save"
+            class="px-5 py-2.5 admin-btn-primary rounded-lg text-sm font-medium transition-colors shadow-sm shadow-cyan/20 flex items-center">
+            <i class="fa-solid fa-check mr-2"></i>Salvar Produto
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- Modal: Confirmar Exclusão                    -->
+  <!-- ============================================ -->
+  <div id="confirm-modal" class="hidden fixed inset-0 z-[55] flex items-center justify-center p-4">
+    <div id="confirm-overlay" class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm fade-in text-center">
+      <div class="pt-8 pb-2">
+        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <i class="fa-solid fa-triangle-exclamation text-2xl text-red-500"></i>
+        </div>
+      </div>
+      <div class="px-6 pb-2">
+        <h3 class="text-lg font-bold text-gray-800">Apagar Produto?</h3>
+        <p id="confirm-message" class="text-sm text-gray-500 mt-2">Esta ação não pode ser desfeita.</p>
+      </div>
+      <div class="flex gap-3 px-6 py-6">
+        <button id="btn-confirm-cancel" class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+          Cancelar
+        </button>
+        <button id="btn-confirm-delete" class="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
+          <i class="fa-solid fa-trash text-xs"></i>Apagar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- Modal: Confirmar Exclusão                    -->
+  <!-- ============================================ -->
+  <div id="confirm-modal" class="hidden fixed inset-0 z-[55] flex items-center justify-center p-4">
+  (() => {
+    // ==============================================
+    // BOTAO: Adicionar Novo Produto
+    // ==============================================
+    const btnNovoProduto = document.getElementById('btn-novo-produto');
+    const btnEmptyAdd = document.getElementById('btn-empty-add');
+    const productModal = document.getElementById('product-modal');
+
+    // Função para abrir modal de adicionar produto
+    window.abrirModal = function() {
+      if (!productModal) return;
+      document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-plus-circle text-cyan mr-2"></i>Novo Produto';
+      document.getElementById('product-form').reset();
+      document.getElementById('product-id').value = '';
+      productModal.classList.remove('hidden');
+    };
+
+    // ==============================================
+    // ESTADO — Array principal de produtos
+    // ==============================================
+    const state = {
+      produtos: [
+        { id: "prod_001", nome: "Ray-Ban Aviador",      preco: 45000, categoria: "armação",  estoque: 15, imagem: "", ativo: true },
+        { id: "prod_002", nome: "Lente Progressiva HD",  preco: 68000, categoria: "lente",    estoque: 8,  imagem: "", ativo: true },
+        { id: "prod_003", nome: "Corda para Óculos",     preco: 2500,  categoria: "acessório", estoque: 50, imagem: "", ativo: true },
+        { id: "prod_004", nome: "Armação Titanium",      preco: 32000, categoria: "armação",  estoque: 6,  imagem: "", ativo: true },
+        { id: "prod_005", nome: "Oakley Holbrook",       preco: 55000, categoria: "armação",  estoque: 10, imagem: "", ativo: true },
+        { id: "prod_006", nome: "Fluido Limpeza 120ml",  preco: 1800,  categoria: "acessório", estoque: 35, imagem: "", ativo: true },
+      ],
+      nextId: 7,
+    };
+
+    // Imagem temporária (base64 ou URL) antes de salvar
+    let tempImagem = '';
+
+    // ==============================================
+    // DOM REFERENCES
+    // ==============================================
+    const $ = (sel) => document.querySelector(sel);
+    const grid             = $('#products-grid');
+    const emptyState       = $('#empty-state');
+    const countBadge       = $('#product-count');
+    const modal            = $('#product-modal');
+    const modalOverlay     = $('#modal-overlay');
+    const modalTitle       = $('#modal-title');
+    const form             = $('#product-form');
+    const fieldId          = $('#product-id');
+    const fieldNome        = $('#product-nome');
+    const fieldCategoria   = $('#product-categoria');
+    const fieldPreco       = $('#product-preco');
+    const fieldEstoque     = $('#product-estoque');
+    const fieldImagem      = $('#product-imagem');
+    const uploadZone       = $('#upload-zone');
+    const imagePreview     = $('#image-preview');
+    const previewImg       = $('#preview-img');
+    const uploadPlaceholder = $('#upload-placeholder');
+    const btnRemoveImage   = $('#btn-remove-image');
+    const filterCategory   = $('#category-filter');
+    const searchInput      = $('#search-input');
+    const confirmModal     = $('#confirm-modal');
+    const confirmOverlay   = $('#confirm-overlay');
+    const confirmMessage   = $('#confirm-message');
+    const btnConfirmCancel = $('#btn-confirm-cancel');
+    const btnConfirmDelete = $('#btn-confirm-delete');
+
+    let pendingDeleteId = null;
+
+    // ==============================================
+    // GERAR ID ÚNICO
+    // ==============================================
+    function gerarId() {
+      const id = `prod_${String(state.nextId).padStart(3, '0')}`;
+      state.nextId++;
+      return id;
+    }
+
+    // ==============================================
+    // TOAST — Feedback visual
+    // ==============================================
+    function showToast(message, type = 'success') {
+      const colors = { success: 'bg-emerald-500', error: 'bg-red-500' };
+      const icons  = { success: 'fa-circle-check', error: 'fa-circle-exclamation' };
+
+      const toast = document.createElement('div');
+      toast.className = `fixed top-5 right-5 z-[60] flex items-center gap-3 px-5 py-3 rounded-xl text-white text-sm font-medium shadow-lg ${colors[type]} fade-in`;
+      toast.innerHTML = `<i class="fa-solid ${icons[type]}"></i>${message}`;
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-10px)';
+        setTimeout(() => toast.remove(), 400);
+      }, 2500);
+    }
+
+    // ==============================================
+    // RENDERIZAR CARDS — Lê do state.produtos
+    // ==============================================
+    function renderCards() {
+      const categoria = filterCategory.value;
+      const termo     = searchInput.value.toLowerCase().trim();
+
+      let produtos = state.produtos;
+
+      if (categoria) produtos = produtos.filter(p => p.categoria === categoria);
+      if (termo) produtos = produtos.filter(p =>
+        p.nome.toLowerCase().includes(termo) ||
+        p.id.toLowerCase().includes(termo)
+      );
+
+      countBadge.textContent = produtos.length;
+
+      if (produtos.length === 0) {
+        grid.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      emptyState.classList.add('hidden');
+
+      // Cores e ícones por categoria
+      const catConfig = {
+        'armação':  { badge: 'bg-cyan/10 text-cyan',     icon: 'fa-glasses',     iconBg: 'bg-cyan/10 text-cyan' },
+        'lente':    { badge: 'bg-magenta/10 text-magenta', icon: 'fa-eye',        iconBg: 'bg-magenta/10 text-magenta' },
+        'acessório': { badge: 'bg-yellow/10 text-yellow',  icon: 'fa-screwdriver-wrench', iconBg: 'bg-yellow/10 text-yellow' },
+      };
+
+      grid.innerHTML = produtos.map(p => {
+        const cfg = catConfig[p.categoria] || { badge: 'bg-gray-100 text-gray-600', icon: 'fa-box', iconBg: 'bg-gray-100 text-gray-500' };
+
+        // Estoque visual
+        let estoqueCor = 'text-emerald-600 bg-emerald-50';
+        let estoqueLabel = 'Em estoque';
+        if (p.estoque === 0) { estoqueCor = 'text-red-600 bg-red-50'; estoqueLabel = 'Sem estoque'; }
+        else if (p.estoque <= 5) { estoqueCor = 'text-amber-600 bg-amber-50'; estoqueLabel = 'Estoque baixo'; }
+
+        // Imagem ou placeholder
+        const imgHtml = p.imagem
+          ? `<img src="${p.imagem}" alt="${p.nome}" class="w-full h-40 object-cover">`
+          : `<div class="w-full h-40 bg-gray-50 flex items-center justify-center">
+               <i class="fa-solid ${cfg.icon} text-4xl text-gray-300"></i>
+             </div>`;
+
+        return `
+          <div class="admin-card overflow-hidden card-hover">
+            <!-- Imagem -->
+            ${imgHtml}
+
+            <!-- Info -->
+            <div class="p-4">
+              <!-- Categoria badge -->
+              <span class="inline-block px-2.5 py-1 text-xs font-medium rounded-full ${cfg.badge} mb-2">
+                ${p.categoria}
+              </span>
+
+              <!-- Nome -->
+              <h3 class="text-sm font-bold text-gray-800 leading-tight mb-1 truncate" title="${p.nome}">${p.nome}</h3>
+
+              <!-- Preço -->
+              <p class="text-lg font-bold text-cyan">Kz ${p.preco.toLocaleString('pt-AO')}</p>
+
+              <!-- Estoque -->
+              <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full ${estoqueCor}">
+                  <i class="fa-solid fa-cube mr-1 text-[10px]"></i>${p.estoque} un.
+                </span>
+                <span class="text-[11px] text-gray-400">${estoqueLabel}</span>
+              </div>
+
+              <!-- Ações -->
+              <div class="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+                <button data-action="editar" data-id="${p.id}" class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-cyan bg-cyan/5 hover:bg-cyan/10 rounded-lg transition-colors">
+                  <i class="fa-solid fa-pen-to-square"></i>Editar
+                </button>
+                <button data-action="apagar" data-id="${p.id}" class="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-red-500 bg-red-5 hover:bg-red-50 rounded-lg transition-colors">
+                  <i class="fa-solid fa-trash"></i>Apagar
+                </button>
+              </div>
+
+              <!-- Visibilidade -->
+              <div class="mt-2 pt-3 border-t border-gray-100">
+                <label class="relative inline-flex items-center justify-center cursor-pointer">
+                  <input type="checkbox" ${p.ativo ? 'checked' : ''}
+                    onchange="toggleProductVisibility('${p.id}', this.checked)"
+                    class="sr-only peer">
+                  <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-cyan rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-cyan"></div>
+                  <span class="ml-2 text-xs text-gray-600">${p.ativo ? 'Visível' : 'Oculto'}</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ==============================================
+    // MODAL — Abrir / Fechar
+    // ==============================================
+    function abrirModal(produto = null) {
+      form.reset();
+      clearErrors();
+      resetImageUpload();
+
+      if (produto) {
+        // Modo edição
+        modalTitle.innerHTML = '<i class="fa-solid fa-pen-to-square text-cyan mr-2"></i>Editar Produto';
+        fieldId.value        = produto.id;
+        fieldNome.value      = produto.nome;
+        fieldCategoria.value = produto.categoria;
+        fieldPreco.value     = produto.preco;
+        fieldEstoque.value   = produto.estoque;
+        tempImagem           = produto.imagem || '';
+
+        // Mostrar preview da imagem existente
+        if (produto.imagem) {
+          previewImg.src = produto.imagem;
+          imagePreview.classList.remove('hidden');
+          uploadPlaceholder.classList.add('hidden');
+        }
+      } else {
+        // Modo novo
+        modalTitle.innerHTML = '<i class="fa-solid fa-plus-circle text-cyan mr-2"></i>Novo Produto';
+        fieldId.value = '';
+        tempImagem    = '';
+      }
+
+      modal.classList.remove('hidden');
+      fieldNome.focus();
+    }
+
+    function fecharModal() {
+      modal.classList.add('hidden');
+      clearErrors();
+      resetImageUpload();
+    }
+
+    // ==============================================
+    // UPLOAD DE IMAGEM
+    // ==============================================
+    function resetImageUpload() {
+      fieldImagem.value = '';
+      imagePreview.classList.add('hidden');
+      uploadPlaceholder.classList.remove('hidden');
+      previewImg.src = '';
+      tempImagem = '';
+    }
+
+    function handleImageUpload(file) {
+      if (!file || !file.type.startsWith('image/')) {
+        showToast('Selecione um arquivo de imagem válido', 'error');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('Imagem deve ter no máximo 5MB', 'error');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        tempImagem = e.target.result;
+        previewImg.src = tempImagem;
+        imagePreview.classList.remove('hidden');
+        uploadPlaceholder.classList.add('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // ==============================================
+    // VALIDAÇÃO — Campos obrigatórios
+    // ==============================================
+    function validarFormulario() {
+      let valido = true;
+      clearErrors();
+
+      [fieldNome, fieldCategoria, fieldPreco, fieldEstoque].forEach(el => {
+        if (!el.value.trim()) {
+          el.classList.add('field-error');
+          valido = false;
+        }
+      });
+
+      if (fieldPreco.value && Number(fieldPreco.value) <= 0) {
+        fieldPreco.classList.add('field-error');
+        valido = false;
+      }
+
+      if (fieldEstoque.value && Number(fieldEstoque.value) < 0) {
+        fieldEstoque.classList.add('field-error');
+        valido = false;
+      }
+
+      if (!valido) showToast('Preencha todos os campos obrigatórios', 'error');
+
+      return valido;
+    }
+
+    function clearErrors() {
+      [fieldNome, fieldCategoria, fieldPreco, fieldEstoque].forEach(el => {
+        el.classList.remove('field-error');
+      });
+    }
+
+    // ==============================================
+    // ADICIONAR / EDITAR PRODUTO
+    // ==============================================
+    function salvarProduto() {
+      if (!validarFormulario()) return;
+
+      const editId = fieldId.value;
+
+      const produto = {
+        id:        editId || gerarId(),
+        nome:      fieldNome.value.trim(),
+        categoria: fieldCategoria.value,
+        preco:     Number(fieldPreco.value),
+        estoque:   Number(fieldEstoque.value),
+        imagem:    tempImagem,
+        ativo:     true,
+      };
+
+      if (editId) {
+        const idx = state.produtos.findIndex(p => p.id === editId);
+        if (idx !== -1) {
+          state.produtos[idx] = produto;
+          showToast('Produto atualizado com sucesso');
+        }
+      } else {
+        state.produtos.unshift(produto);
+        showToast('Produto adicionado com sucesso');
+      }
+
+      fecharModal();
+      renderCards();
+    }
+
+    // ==============================================
+    // APAGAR PRODUTO — Com confirmação visual
+    // ==============================================
+    function apagarProduto(id) {
+      const produto = state.produtos.find(p => p.id === id);
+      if (!produto) return;
+
+      pendingDeleteId = id;
+      confirmMessage.textContent = `Tem certeza que deseja apagar "${produto.nome}"? Esta ação não pode ser desfeita.`;
+      confirmModal.classList.remove('hidden');
+      btnConfirmDelete.focus();
+    }
+
+    function confirmarExclusao() {
+      if (!pendingDeleteId) return;
+
+      const idx = state.produtos.findIndex(p => p.id === pendingDeleteId);
+      if (idx !== -1) {
+        const nome = state.produtos[idx].nome;
+        state.produtos.splice(idx, 1);
+        renderCards();
+        showToast(`"${nome}" removido`);
+      }
+
+      fecharConfirmModal();
+    }
+
+    function fecharConfirmModal() {
+      confirmModal.classList.add('hidden');
+      pendingDeleteId = null;
+    }
+
+    // ==============================================
+    // EDITAR PRODUTO
+    // ==============================================
+    function editarProduto(id) {
+      const produto = state.produtos.find(p => p.id === id);
+      if (produto) abrirModal(produto);
+    }
+
+    // ==============================================
+    // EVENT LISTENERS
+    // ==============================================
+    function setupEventListeners() {
+      // Abrir modal — Novo Produto
+      $('#btn-novo-produto').addEventListener('click', () => abrirModal());
+      $('#btn-empty-add').addEventListener('click', () => abrirModal());
+
+      // Fechar modal
+      $('#btn-close-modal').addEventListener('click', fecharModal);
+      $('#btn-cancel').addEventListener('click', fecharModal);
+      modalOverlay.addEventListener('click', fecharModal);
+
+      // Fechar com Escape
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          if (!confirmModal.classList.contains('hidden')) fecharConfirmModal();
+          else if (!modal.classList.contains('hidden')) fecharModal();
+        }
+      });
+
+      // Submeter formulário
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        salvarProduto();
+      });
+
+      // Remover classe de erro ao digitar
+      [fieldNome, fieldCategoria, fieldPreco, fieldEstoque].forEach(el => {
+        el.addEventListener('input', () => el.classList.remove('field-error'));
+      });
+
+      // Upload de imagem — input file
+      fieldImagem.addEventListener('change', (e) => {
+        if (e.target.files[0]) handleImageUpload(e.target.files[0]);
+      });
+
+      // Upload de imagem — drag & drop
+      uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('drag-over');
+      });
+      uploadZone.addEventListener('dragleave', () => {
+        uploadZone.classList.remove('drag-over');
+      });
+      uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('drag-over');
+        if (e.dataTransfer.files[0]) handleImageUpload(e.dataTransfer.files[0]);
+      });
+
+      // Remover imagem do preview
+      btnRemoveImage.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        resetImageUpload();
+      });
+
+      // Modal de confirmação de exclusão
+      btnConfirmCancel.addEventListener('click', fecharConfirmModal);
+      btnConfirmDelete.addEventListener('click', confirmarExclusao);
+      confirmOverlay.addEventListener('click', fecharConfirmModal);
+
+      // Filtros
+      filterCategory.addEventListener('change', renderCards);
+      searchInput.addEventListener('input', renderCards);
+
+      // Delegação de eventos nos cards (editar / apagar)
+      grid.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-action]');
+        if (!btn) return;
+
+        const action = btn.dataset.action;
+        const id     = btn.dataset.id;
+
+        if (action === 'editar') editarProduto(id);
+        if (action === 'apagar') apagarProduto(id);
+      });
+
+      // ==============================================
+      // TOGGLE VISIBILIDADE DO PRODUTO
+      // ==============================================
+      window.toggleProductVisibility = async (id, isVisible) => {
+        try {
+          // Atualiza estado local
+          const idx = state.produtos.findIndex(p => p.id === id);
+          if (idx !== -1) {
+            state.produtos[idx].ativo = isVisible;
+          }
+
+          // Salva no Supabase
+          const supabase = await window.getSupabase();
+          const { error } = await supabase
+            .from('produtos')
+            .update({ ativo: isVisible })
+            .eq('id', id);
+
+          if (error) {
+            console.error('Erro ao salvar no Supabase:', error);
+            // Reverte estado local em caso de erro
+            if (idx !== -1) state.produtos[idx].ativo = !isVisible;
+            throw error;
+          }
+
+          showToast(`Produto ${isVisible ? 'visível' : 'oculto'}!`, 'success');
+          renderCards();
+        } catch (error) {
+          console.error('Erro ao atualizar visibilidade:', error);
+          showToast('Erro ao atualizar visibilidade', 'error');
+          renderCards(); // Reverte visual
+        }
+      };
+    }
+
+    // ==============================================
+    // INICIALIZAÇÃO
+    // ==============================================
+    document.addEventListener('DOMContentLoaded', () => {
+      setupEventListeners();
+      renderCards();
+    });
+  })();
+  </script>
+
+</body>
+</html>

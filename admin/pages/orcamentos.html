@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Orçamentos - Viva Óptica Admin</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../admin.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- html2pdf.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-slide-in { animation: slideIn 0.3s ease-out; }
+        .product-item { transition: all 0.2s; }
+        .product-item:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .pdf-preview { border: 2px dashed #e5e7eb; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Sidebar -->
+    <aside class="fixed left-0 top-0 h-full w-64 admin-sidebar text-white overflow-y-auto">
+        <div class="p-6">
+            <h1 class="text-2xl font-bold">Viva Óptica</h1>
+            <p class="text-sm text-gray-400 mt-1">Painel Administrativo</p>
+        </div>
+
+        <nav class="mt-6">
+            <a href="../index.html" class="sidebar-item flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                <i class="fa-solid fa-chart-line w-6"></i>
+                <span class="ml-3">Dashboard</span>
+            </a>
+            <a href="agendamentos.html" class="sidebar-item flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                <i class="fa-regular fa-calendar-check w-6"></i>
+                <span class="ml-3">Agendamentos</span>
+            </a>
+            <a href="prontuario.html" class="sidebar-item flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                <i class="fa-solid fa-file-medical w-6"></i>
+                <span class="ml-3">Prontuário Digital</span>
+            </a>
+            <a href="laboratorio.html" class="sidebar-item flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                <i class="fa-solid fa-industry w-6"></i>
+                <span class="ml-3">Laboratório</span>
+            </a>
+            <a href="estoque.html" class="sidebar-item flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                <i class="fa-solid fa-warehouse w-6"></i>
+                <span class="ml-3">Estoque Inteligente</span>
+            </a>
+            <a href="agenda.html" class="sidebar-item flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                <i class="fa-solid fa-calendar-days w-6"></i>
+                <span class="ml-3">Agenda Consultas</span>
+            </a>
+            <a href="crm.html" class="sidebar-item flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                <i class="fa-solid fa-users w-6"></i>
+                <span class="ml-3">CRM Re-engajamento</span>
+            </a>
+            <a href="orcamentos.html" class="sidebar-item active flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                <i class="fa-solid fa-file-invoice-dollar w-6"></i>
+                <span class="ml-3">Orçamentos PDF</span>
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-white/10">
+            <a href="../index.html" target="_blank" class="flex items-center text-sm text-gray-400 hover:text-white transition-colors mb-3">
+                <i class="fa-solid fa-external-link-alt w-6"></i>
+                <span class="ml-3">Ver Site</span>
+            </a>
+            <button onclick="logout()" class="flex items-center text-sm text-red-400 hover:text-red-300 transition-colors w-full">
+                <i class="fa-solid fa-sign-out-alt w-6"></i>
+                <span class="ml-3">Terminar Sessão</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="ml-64 p-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-navy">Gerador de Orçamentos</h1>
+                <p class="text-gray-600 mt-1">Crie orçamentos profissionais prontos para WhatsApp</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="listarOrcamentos()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium transition-colors flex items-center">
+                    <i class="fa-solid fa-list mr-2"></i>
+                    Listar Orçamentos
+                </button>
+                <button onclick="novoOrcamento()" class="admin-btn-primary px-6 py-3 rounded-lg font-medium transition-colors flex items-center">
+                    <i class="fa-solid fa-plus mr-2"></i>
+                    Novo Orçamento
+                </button>
+            </div>
+        </div>
+
+        <!-- Estatísticas -->
+        <div class="grid grid-cols-4 gap-6 mb-8" id="estatisticas-container">
+            <div class="admin-card p-6 border-l-4 border-gray-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Rascunhos</p>
+                        <p class="text-3xl font-bold text-navy" id="stat-rascunhos">0</p>
+                    </div>
+                    <div class="bg-gray-100 text-gray-600 w-12 h-12 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-file text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-card p-6 border-l-4 border-blue-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Enviados</p>
+                        <p class="text-3xl font-bold text-navy" id="stat-enviados">0</p>
+                    </div>
+                    <div class="bg-blue-100 text-blue-600 w-12 h-12 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-paper-plane text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-card p-6 border-l-4 border-green-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Aprovados</p>
+                        <p class="text-3xl font-bold text-navy" id="stat-aprovados">0</p>
+                    </div>
+                    <div class="bg-green-100 text-green-600 w-12 h-12 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-check-circle text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-card p-6 border-l-4 border-purple-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Vendas Totais</p>
+                        <p class="text-2xl font-bold text-navy" id="stat-vendas">Kz 0</p>
+                    </div>
+                    <div class="bg-purple-100 text-purple-600 w-12 h-12 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-chart-line text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulário de Orçamento -->
+        <div class="admin-card p-6 mb-8" id="formulario-container">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-navy">Novo Orçamento</h2>
+                <button onclick="cancelarOrcamento()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa-solid fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-6 mb-6">
+                <!-- Cliente -->
+                <div class="col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Cliente *</label>
+                    <input type="text" id="cliente_busca" class="w-full admin-input" placeholder="Buscar cliente por nome ou telefone...">
+                    <input type="hidden" id="cliente_id">
+                    <div id="cliente-suggestions" class="hidden absolute bg-white border shadow-lg rounded-lg max-h-60 overflow-y-auto z-10 w-96"></div>
+                </div>
+
+                <!-- Data de Emissão -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Data de Emissão</label>
+                    <input type="date" id="data_emissao" class="w-full admin-input">
+                </div>
+
+                <!-- Data de Validade -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Data de Validade *</label>
+                    <input type="date" id="data_validade" required class="w-full admin-input">
+                </div>
+            </div>
+
+            <!-- Produtos -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-navy">Produtos/Serviços</h3>
+                    <button onclick="abrirModalProduto()" class="admin-btn-primary px-4 py-2 rounded-lg text-sm font-medium">
+                        <i class="fa-solid fa-plus mr-1"></i>
+                        Adicionar Produto
+                    </button>
+                </div>
+
+                <div id="itens-container" class="space-y-3">
+                    <!-- Itens serão adicionados aqui -->
+                    <div class="text-center py-8 text-gray-500 border-2 border-dashed border-gray-200 rounded-lg">
+                        <i class="fa-solid fa-box text-3xl mb-2"></i>
+                        <p>Nenhum produto adicionado</p>
+                        <p class="text-sm">Clique em "Adicionar Produto" para começar</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Totais -->
+            <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Desconto</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="desconto_valor" class="flex-1 admin-input" placeholder="0" step="0.01" min="0">
+                            <select id="desconto_tipo" class="admin-input">
+                                <option value="valor">Kz</option>
+                                <option value="percentual">%</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Subtotal:</span>
+                            <span class="font-medium" id="total_subtotal">Kz 0,00</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Desconto:</span>
+                            <span class="font-medium text-red-600" id="total_desconto">- Kz 0,00</span>
+                        </div>
+                        <div class="flex justify-between text-lg font-bold text-navy pt-2 border-t">
+                            <span>Total:</span>
+                            <span id="total_final">Kz 0,00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Observações -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Observações</label>
+                <textarea id="observacoes" rows="3" class="w-full admin-input" placeholder="Observações adicionais..."></textarea>
+            </div>
+
+            <!-- Botões de Ação -->
+            <div class="flex gap-3">
+                <button onclick="salvarOrcamento()" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                    <i class="fa-solid fa-save mr-2"></i>
+                    Salvar
+                </button>
+                <button onclick="gerarPDF()" class="flex-1 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                    <i class="fa-solid fa-file-pdf mr-2"></i>
+                    Gerar PDF
+                </button>
+                <button onclick="enviarWhatsApp()" class="flex-1 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                    <i class="fa-brands fa-whatsapp mr-2"></i>
+                    Enviar WhatsApp
+                </button>
+            </div>
+        </div>
+
+        <!-- Lista de Orçamentos -->
+        <div class="admin-card p-6 hidden" id="lista-container">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-navy">Orçamentos</h2>
+                <div class="flex gap-3">
+                    <select id="filtro-status" onchange="filtrarOrcamentos()" class="admin-input">
+                        <option value="">Todos os status</option>
+                        <option value="rascunho">Rascunho</option>
+                        <option value="enviado">Enviado</option>
+                        <option value="aprovado">Aprovado</option>
+                        <option value="cancelado">Cancelado</option>
+                    </select>
+                    <button onclick="novoOrcamento()" class="admin-btn-primary px-4 py-2 rounded-lg text-sm font-medium">
+                        <i class="fa-solid fa-plus mr-1"></i>
+                        Novo
+                    </button>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b">
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Número</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Cliente</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Data</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Validade</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Total</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Status</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orcamentos-tabela">
+                        <!-- Preenchido via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal: Selecionar Produto -->
+    <div id="produto-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-navy">Selecionar Produto</h3>
+                    <button onclick="fecharModalProduto()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fa-solid fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <input type="text" id="produto_busca" class="w-full border border-gray-300 rounded-lg px-4 py-2 mb-4 focus:ring-2 focus:ring-cyan focus:border-transparent" placeholder="Buscar produto por nome...">
+
+                <div id="produtos-grid" class="grid grid-cols-3 gap-4 max-h-96 overflow-y-auto">
+                    <!-- Produtos carregados via JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template PDF (invisível) -->
+    <div id="pdf-template" class="hidden">
+        <div class="p-8 bg-white" style="font-family: 'Inter', sans-serif;">
+            <!-- Header -->
+            <div class="flex justify-between items-start mb-8 pb-4 border-b-2 border-cyan">
+                <div>
+                    <img src="../Logo/viva_logo_branco.jpeg" alt="Viva Óptica" style="height: 60px; width: auto; margin-bottom: 10px;">
+                    <p style="color: #0D1B2E; font-size: 12px;">Rua Principal, 123 - Luanda, Angola</p>
+                    <p style="color: #0D1B2E; font-size: 12px;">Tel: +244 923 000 000</p>
+                    <p style="color: #0D1B2E; font-size: 12px;">Email: contato@vivaoptica.ao</p>
+                </div>
+                <div class="text-right">
+                    <h1 style="color: #00aadc; font-size: 24px; font-weight: bold; margin: 0;">ORÇAMENTO</h1>
+                    <p style="color: #6b7280; font-size: 14px; margin-top: 5px;" id="pdf-numero">ORC-2026-0001</p>
+                </div>
+            </div>
+
+            <!-- Informações do Cliente -->
+            <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                <h3 style="color: #0D1B2E; font-size: 14px; font-weight: 600; margin-bottom: 8px;">Cliente</h3>
+                <p style="color: #374151; font-size: 12px; margin: 2px 0;" id="pdf-cliente">Nome do Cliente</p>
+                <p style="color: #374151; font-size: 12px; margin: 2px 0;" id="pdf-telefone">Telefone: +244 923 000 000</p>
+                <p style="color: #374151; font-size: 12px; margin: 2px 0;" id="pdf-email">Email: cliente@email.com</p>
+            </div>
+
+            <!-- Datas -->
+            <div class="flex justify-between mb-6">
+                <div>
+                    <p style="color: #6b7280; font-size: 12px;">Data de Emissão</p>
+                    <p style="color: #0D1B2E; font-size: 14px; font-weight: 600;" id="pdf-emissao">02/05/2026</p>
+                </div>
+                <div>
+                    <p style="color: #6b7280; font-size: 12px;">Data de Validade</p>
+                    <p style="color: #0D1B2E; font-size: 14px; font-weight: 600;" id="pdf-validade">16/05/2026</p>
+                </div>
+            </div>
+
+            <!-- Tabela de Produtos -->
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 6px;" id="pdf-itens">
+                <thead>
+                    <tr style="background-color: #0D1B2E; color: white;">
+                        <th style="padding: 10px; text-align: left; font-size: 12px;">Descrição</th>
+                        <th style="padding: 10px; text-align: center; font-size: 12px;">Qtd</th>
+                        <th style="padding: 10px; text-align: right; font-size: 12px;">Preço Unit.</th>
+                        <th style="padding: 10px; text-align: right; font-size: 12px;">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Itens serão inseridos via JavaScript -->
+                </tbody>
+            </table>
+
+            <!-- Totais -->
+            <div class="flex justify-end">
+                <div style="width: 250px;">
+                    <div class="flex justify-between py-2 border-b">
+                        <span style="color: #6b7280; font-size: 12px;">Subtotal:</span>
+                        <span style="color: #0D1B2E; font-size: 12px; font-weight: 600;" id="pdf-subtotal">Kz 0,00</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b">
+                        <span style="color: #6b7280; font-size: 12px;">Desconto:</span>
+                        <span style="color: #ef4444; font-size: 12px; font-weight: 600;" id="pdf-desconto">- Kz 0,00</span>
+                    </div>
+                    <div class="flex justify-between py-2" style="background-color: #00aadc; padding: 10px; margin-top: 6px; border-radius: 4px;">
+                        <span style="color: white; font-size: 14px; font-weight: bold;">Total:</span>
+                        <span style="color: white; font-size: 14px; font-weight: bold;" id="pdf-total">Kz 0,00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Observações -->
+            <div class="mt-6 p-4 bg-gray-50 rounded-lg" id="pdf-observacoes-container">
+                <h3 style="color: #0D1B2E; font-size: 14px; font-weight: 600; margin-bottom: 8px;">Observações</h3>
+                <p style="color: #374151; font-size: 12px;" id="pdf-observacoes"></p>
+            </div>
+
+            <!-- Termos -->
+            <div class="mt-6 p-4 border border-gray-300 rounded-lg">
+                <h3 style="color: #0D1B2E; font-size: 14px; font-weight: 600; margin-bottom: 8px;">Termos e Condições</h3>
+                <ul style="color: #374151; font-size: 11px; padding-left: 20px; margin: 0;">
+                    <li style="margin: 4px 0;">Validade do orçamento: 15 dias a partir da data de emissão</li>
+                    <li style="margin: 4px 0;">Prazo de entrega: 5-7 dias úteis após aprovação</li>
+                    <li style="margin: 4px 0;">Garantia de 6 meses para armações e lentes</li>
+                    <li style="margin: 4px 0;">Pagamento: 50% no pedido, 50% na entrega</li>
+                </ul>
+            </div>
+
+            <!-- Assinatura -->
+            <div class="mt-8 pt-6 border-t">
+                <div style="display: flex; justify-content: space-between;">
+                    <div style="flex: 1; text-align: center;">
+                        <div style="border-top: 1px solid #0D1B2E; margin-top: 40px; padding-top: 8px;">
+                            <p style="color: #0D1B2E; font-size: 12px;">Assinatura do Cliente</p>
+                        </div>
+                    </div>
+                    <div style="flex: 1; text-align: center;">
+                        <div style="border-top: 1px solid #0D1B2E; margin-top: 40px; padding-top: 8px;">
+                            <p style="color: #0D1B2E; font-size: 12px;">Viva Óptica</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div style="margin-top: 20px; text-align: center; padding-top: 10px; border-top: 1px solid #e5e7eb;">
+                <p style="color: #00aadc; font-size: 11px; font-weight: 600;">Viva Óptica - O Futuro é Mais Nítido Aqui</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-3"></div>
+
+    <!-- Scripts -->
+    <script src="../supabaseClient.js"></script>
+    <script src="js/orcamentos.js"></script>
+</body>
+</html>

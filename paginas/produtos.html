@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produtos | Viva Óptica</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: '#1a2a4a',
+                        cyan: '#00aadc',
+                        magenta: '#e91e8c',
+                        yellow: '#f5c800',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            color: #1a2a4a;
+        }
+
+        .product-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .product-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+        }
+
+        .filter-btn {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .filter-btn.active {
+            background-color: #00aadc;
+            color: white;
+        }
+
+        .modal-overlay {
+            backdrop-filter: blur(4px);
+        }
+
+        .skeleton {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-danger {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body class="bg-white">
+
+    <!-- ========== NAVBAR ========== -->
+    <nav class="bg-white sticky top-0 z-50 shadow-md border-b-2 border-cyan">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <!-- Logo -->
+                <div class="flex-shrink-0">
+                    <a href="../index.html" class="flex items-center">
+                        <img src="../Logo/viva_logo_branco.jpeg" alt="Viva Óptica" class="h-12 w-auto object-contain">
+                    </a>
+                </div>
+
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="../index.html" class="text-navy hover:text-cyan transition-colors font-medium">Início</a>
+                    <a href="produtos.html" class="text-cyan font-bold border-b-2 border-cyan pb-1">Produtos</a>
+                    <a href="servicos.html" class="text-navy hover:text-cyan transition-colors font-medium">Serviços</a>
+                    <a href="sobre.html" class="text-navy hover:text-cyan transition-colors font-medium">Sobre</a>
+                    <a href="contacto.html" class="text-navy hover:text-cyan transition-colors font-medium">Contacto</a>
+                    <a href="../agendamento.html" class="bg-cyan text-white px-6 py-2 rounded-full font-semibold hover:bg-cyan/90 transition-colors">Agendar</a>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <button id="mobile-menu-btn" class="md:hidden text-navy hover:text-cyan">
+                    <i class="fas fa-bars text-2xl"></i>
+                </button>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div id="mobile-menu" class="hidden md:hidden border-t border-gray-200">
+                <div class="px-4 py-4 space-y-3">
+                    <a href="../index.html" class="block text-navy hover:text-cyan font-medium">Início</a>
+                    <a href="produtos.html" class="block text-cyan font-bold">Produtos</a>
+                    <a href="servicos.html" class="block text-navy hover:text-cyan font-medium">Serviços</a>
+                    <a href="sobre.html" class="block text-navy hover:text-cyan font-medium">Sobre</a>
+                    <a href="contacto.html" class="block text-navy hover:text-cyan font-medium">Contacto</a>
+                    <a href="../agendamento.html" class="block bg-cyan text-white px-4 py-2 rounded-full font-semibold text-center">Agendar</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ========== HERO SECTION ========== -->
+    <section class="bg-gradient-to-r from-navy to-cyan/80 text-white py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h1 class="text-5xl md:text-6xl font-bold mb-4">Catálogo de Produtos</h1>
+                <p class="text-xl text-gray-100 max-w-2xl mx-auto">
+                    Descubra nossa seleção premium de óculos, lentes e acessórios. 
+                    Qualidade garantida para sua visão perfeita.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== FILTER SECTION ========== -->
+    <section class="bg-gray-50 py-8 border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-center text-gray-700 font-semibold mb-6">Filtrar por Categoria</h2>
+            <div class="flex flex-wrap gap-3 justify-center">
+                <button class="filter-btn active bg-cyan text-white px-8 py-3 rounded-full font-semibold shadow-md hover:shadow-lg transition-all" data-category="todos">
+                    <i class="fas fa-th-large mr-2"></i>Todos
+                </button>
+                <button class="filter-btn bg-white text-navy border-2 border-navy px-8 py-3 rounded-full font-semibold hover:bg-cyan/10 transition-all" data-category="Armacao">
+                    <i class="fas fa-glasses mr-2"></i>Armações
+                </button>
+                <button class="filter-btn bg-white text-navy border-2 border-navy px-8 py-3 rounded-full font-semibold hover:bg-cyan/10 transition-all" data-category="Lente">
+                    <i class="fas fa-eye mr-2"></i>Lentes
+                </button>
+                <button class="filter-btn bg-white text-navy border-2 border-navy px-8 py-3 rounded-full font-semibold hover:bg-cyan/10 transition-all" data-category="Acessorio">
+                    <i class="fas fa-ring mr-2"></i>Acessórios
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== PRODUCTS GRID ========== -->
+    <section class="py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Products Container -->
+            <div id="products-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Loading skeletons will be inserted here -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="text-center py-16 hidden">
+                <div class="text-6xl text-gray-300 mb-4">
+                    <i class="fas fa-inbox"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-700 mb-2">Nenhum Produto Encontrado</h3>
+                <p class="text-gray-500 text-lg">Tente outra categoria ou verifique as disponibilidades.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== PRODUCT MODAL ========== -->
+    <div id="product-modal" class="fixed inset-0 bg-black/70 modal-overlay hidden items-center justify-center z-[100] p-4">
+        <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative shadow-2xl">
+            <!-- Close Button -->
+            <button id="modal-close" class="absolute top-6 right-6 text-gray-400 hover:text-navy text-3xl z-10 transition-colors">
+                <i class="fas fa-times-circle"></i>
+            </button>
+
+            <!-- Modal Content -->
+            <div id="modal-content" class="p-8">
+                <!-- Content injected by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== WHATSAPP FLOATING BUTTON ========== -->
+    <a href="https://wa.me/244954145065?text=Olá%20Viva%20Óptica%21%20Gostaria%20de%20mais%20informações%20sobre%20vossos%20produtos." target="_blank" rel="noopener noreferrer" class="fixed bottom-8 right-8 bg-green-500 hover:bg-green-600 text-white w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-2xl hover:scale-110 transition-transform z-40 animate-bounce">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
+    <!-- ========== FOOTER ========== -->
+    <footer class="bg-navy text-white py-12 mt-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left mb-8">
+                <div>
+                    <h3 class="font-bold text-lg mb-3 text-cyan">Viva Óptica</h3>
+                    <p class="text-gray-300">Sua visão é nossa prioridade.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-3 text-cyan">Links Rápidos</h3>
+                    <ul class="text-gray-300 space-y-2">
+                        <li><a href="../index.html" class="hover:text-cyan transition-colors">Início</a></li>
+                        <li><a href="sobre.html" class="hover:text-cyan transition-colors">Sobre Nós</a></li>
+                        <li><a href="contacto.html" class="hover:text-cyan transition-colors">Contacto</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-3 text-cyan">Contacte-nos</h3>
+                    <p class="text-gray-300">
+                        <i class="fas fa-phone text-cyan mr-2"></i>+244 954 145 065<br>
+                        <i class="fas fa-envelope text-cyan mr-2"></i>info@vivaoptica.ao
+                    </p>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 pt-8 text-center text-gray-400">
+                <p>&copy; 2026 Viva Óptica. Todos os direitos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ========== SCRIPTS ========== -->
+    <!-- Supabase JS Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Supabase Client -->
+    <script src="../supabaseClient.js"></script>
+
+    <!-- Produtos Page Logic -->
+    <script src="produtos.js"></script>
+
+</body>
+</html>

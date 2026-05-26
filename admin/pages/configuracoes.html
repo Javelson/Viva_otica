@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configurações | Admin - Viva Óptica</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="../admin.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: '#0D1B2E',
+            cyan: '#00aadc',
+            magenta: '#e91e8c',
+            yellow: '#f5c800',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-50">
+  <div class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-64 admin-sidebar text-white flex-shrink-0 hidden md:flex flex-col">
+      <div class="p-6 border-b border-white/10 text-center">
+        <img src="../Logo/viva_logo_branco.jpeg" alt="Viva Óptica Logo" class="h-12 mx-auto mb-3 bg-white rounded-lg p-2">
+        <p class="text-xs text-gray-400">Painel Admin</p>
+      </div>
+      <nav class="flex-1 overflow-y-auto py-4">
+        <a href="index.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+          <i class="fa-solid fa-chart-line w-6"></i>
+          <span class="ml-3">Dashboard</span>
+        </a>
+        <a href="slideshow.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+          <i class="fa-solid fa-images w-6"></i>
+          <span class="ml-3">Slideshow</span>
+        </a>
+        <a href="produtos.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+          <i class="fa-solid fa-box w-6"></i>
+          <span class="ml-3">Produtos</span>
+        </a>
+        <a href="configuracoes.html" class="flex items-center px-6 py-3 text-sm bg-cyan/20 border-r-3 border-cyan transition-colors">
+          <i class="fa-solid fa-cog w-6"></i>
+          <span class="ml-3">Configurações</span>
+        </a>
+        <a href="#" onclick="logout()" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+          <i class="fa-solid fa-sign-out-alt w-6"></i>
+          <span class="ml-3">Logout</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- Header -->
+      <header class="bg-white shadow-sm border-b admin-header">
+        <div class="px-6 py-4 flex items-center justify-between">
+          <h1 class="text-2xl font-bold text-navy">Configurações da Loja</h1>
+          <button onclick="saveAll()" id="save-btn"
+            class="admin-btn-primary px-6 py-2 rounded-lg font-medium transition-colors flex items-center">
+            <i class="fa-solid fa-save mr-2"></i>
+            <span>Salvar Todas</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <main class="flex-1 overflow-y-auto p-6">
+        <!-- Loading -->
+        <div id="loading" class="hidden flex items-center justify-center h-64">
+          <div class="animate-spin rounded-full h-12 w-12 border-4 border-cyan border-t-transparent"></div>
+        </div>
+
+        <div id="config-content" class="space-y-6">
+          <!-- Seção: Informações da Loja -->
+          <div class="admin-card p-6">
+            <h2 class="text-xl font-bold text-navy mb-6 flex items-center">
+              <i class="fa-solid fa-store mr-3 text-cyan"></i>
+              Informações da Loja
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Nome da Loja -->
+              <div>
+                <label for="config-nome_loja" class="block text-sm font-medium text-gray-700 mb-2">
+                  Nome da Loja
+                </label>
+                <input type="text" id="config-nome_loja"
+                  class="w-full px-4 py-2 admin-input focus:border-transparent">
+              </div>
+
+              <!-- Slogan -->
+              <div>
+                <label for="config-slogan" class="block text-sm font-medium text-gray-700 mb-2">
+                  Slogan
+                </label>
+                <input type="text" id="config-slogan"
+                  class="w-full px-4 py-2 admin-input focus:border-transparent">
+              </div>
+            </div>
+          </div>
+
+          <!-- Seção: Contactos -->
+          <div class="admin-card p-6">
+            <h2 class="text-xl font-bold text-navy mb-6 flex items-center">
+              <i class="fa-solid fa-phone mr-3 text-cyan"></i>
+              Contactos
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Telefone -->
+              <div>
+                <label for="config-telefone" class="block text-sm font-medium text-gray-700 mb-2">
+                  <i class="fa-solid fa-phone mr-2 text-gray-400"></i>
+                  Telefone
+                </label>
+                <input type="tel" id="config-telefone"
+                  class="w-full px-4 py-2 admin-input focus:border-transparent">
+              </div>
+
+              <!-- Email -->
+              <div>
+                <label for="config-email_loja" class="block text-sm font-medium text-gray-700 mb-2">
+                  <i class="fa-solid fa-envelope mr-2 text-gray-400"></i>
+                  Email
+                </label>
+                <input type="email" id="config-email_loja"
+                  class="w-full px-4 py-2 admin-input focus:border-transparent">
+              </div>
+
+              <!-- Endereço -->
+              <div class="md:col-span-2">
+                <label for="config-endereco" class="block text-sm font-medium text-gray-700 mb-2">
+                  <i class="fa-solid fa-map-marker-alt mr-2 text-gray-400"></i>
+                  Endereço
+                </label>
+                <input type="text" id="config-endereco"
+                  class="w-full px-4 py-2 admin-input focus:border-transparent">
+              </div>
+            </div>
+          </div>
+
+          <!-- Seção: Horários de Funcionamento -->
+          <div class="admin-card p-6">
+            <h2 class="text-xl font-bold text-navy mb-6 flex items-center">
+              <i class="fa-solid fa-clock mr-3 text-cyan"></i>
+              Horários de Funcionamento
+            </h2>
+
+            <div class="space-y-4">
+              <!-- Seg-Sex -->
+              <div>
+                <label for="config-horario_seg_sex" class="block text-sm font-medium text-gray-700 mb-2">
+                  <i class="fa-solid fa-calendar-day mr-2 text-gray-400"></i>
+                  Segunda a Sexta
+                </label>
+                <input type="text" id="config-horario_seg_sex" placeholder="08:00 - 18:00"
+                  class="w-full px-4 py-2 admin-input focus:border-transparent">
+              </div>
+
+              <!-- Sábado -->
+              <div>
+                <label for="config-horario_sabado" class="block text-sm font-medium text-gray-700 mb-2">
+                  <i class="fa-solid fa-calendar-day mr-2 text-gray-400"></i>
+                  Sábado
+                </label>
+                <input type="text" id="config-horario_sabado" placeholder="08:00 - 13:00"
+                  class="w-full px-4 py-2 admin-input focus:border-transparent">
+              </div>
+
+              <!-- Domingo -->
+              <div>
+                <label for="config-horario_domingo" class="block text-sm font-medium text-gray-700 mb-2">
+                  <i class="fa-solid fa-calendar-day mr-2 text-gray-400"></i>
+                  Domingo
+                </label>
+                <input type="text" id="config-horario_domingo" placeholder="Fechado"
+                  class="w-full px-4 py-2 admin-input focus:border-transparent">
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed bottom-8 left-8 z-50"></div>
+
+  <!-- Scripts -->
+  <script src="../supabaseClient.js"></script>
+  <script src="js/configuracoes.js"></script>
+</body>
+</html>

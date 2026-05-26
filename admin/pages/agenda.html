@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda de Consultas - Viva Óptica Admin</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../admin.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-slide-in { animation: slideIn 0.3s ease-out; }
+        .calendar-cell:hover { background: #f0f9ff; }
+        .slot-occupied { background: #fee2e2; cursor: not-allowed; }
+        .slot-available { background: #d1fae5; cursor: pointer; }
+        .slot-available:hover { background: #a7f3d0; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Sidebar -->
+    <aside class="fixed left-0 top-0 h-full w-64 admin-sidebar text-white overflow-y-auto">
+        <div class="p-6">
+            <h1 class="text-2xl font-bold">Viva Óptica</h1>
+            <p class="text-sm text-gray-400 mt-1">Painel Administrativo</p>
+        </div>
+
+        <nav class="mt-6">
+            <a href="../index.html" class="sidebar-item flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                <i class="fa-solid fa-chart-line w-6"></i>
+                <span class="ml-3">Dashboard</span>
+            </a>
+            <a href="agenda.html" class="sidebar-item flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                <i class="fa-regular fa-calendar-check w-6"></i>
+                <span class="ml-3">Agendamentos</span>
+            </a>
+            <a href="pages/prontuario.html" class="sidebar-item flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                <i class="fa-solid fa-file-medical w-6"></i>
+                <span class="ml-3">Prontuário Digital</span>
+            </a>
+            <a href="pages/laboratorio.html" class="sidebar-item flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                <i class="fa-solid fa-industry w-6"></i>
+                <span class="ml-3">Laboratório</span>
+            </a>
+            <a href="pages/estoque.html" class="sidebar-item flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                <i class="fa-solid fa-warehouse w-6"></i>
+                <span class="ml-3">Estoque Inteligente</span>
+            </a>
+            <a href="pages/agenda.html" class="sidebar-item active flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                <i class="fa-solid fa-calendar-days w-6"></i>
+                <span class="ml-3">Agenda Consultas</span>
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-white/10">
+            <a href="../index.html" target="_blank" class="flex items-center text-sm text-gray-400 hover:text-white transition-colors mb-3">
+                <i class="fa-solid fa-external-link-alt w-6"></i>
+                <span class="ml-3">Ver Site</span>
+            </a>
+            <button onclick="logout()" class="flex items-center text-sm text-red-400 hover:text-red-300 transition-colors w-full">
+                <i class="fa-solid fa-sign-out-alt w-6"></i>
+                <span class="ml-3">Terminar Sessão</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="ml-64 p-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-navy">Agenda de Consultas</h1>
+                <p class="text-gray-600 mt-1">Gestão de agendamentos do optometrista</p>
+            </div>
+            <button onclick="openModal('consulta')" class="admin-btn-primary px-6 py-3 rounded-lg font-medium transition-colors flex items-center">
+                <i class="fa-solid fa-plus mr-2"></i>
+                Nova Consulta
+            </button>
+        </div>
+
+        <!-- Estatísticas -->
+        <div class="grid grid-cols-5 gap-6 mb-8">
+            <div class="admin-card p-6 border-l-4 border-blue-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Agendados</p>
+                        <p class="text-3xl font-bold text-navy" id="stat-agendados">0</p>
+                    </div>
+                    <div class="bg-blue-100 text-blue-600 w-12 h-12 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-calendar-check text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-card p-6 border-l-4 border-green-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Confirmados</p>
+                        <p class="text-3xl font-bold text-navy" id="stat-confirmados">0</p>
+                    </div>
+                    <div class="bg-green-100 text-green-600 w-12 h-12 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-check-circle text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-card p-6 border-l-4 border-purple-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Em Andamento</p>
+                        <p class="text-3xl font-bold text-navy" id="stat-andamento">0</p>
+                    </div>
+                    <div class="bg-purple-100 text-purple-600 w-12 h-12 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-clock text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-card p-6 border-l-4 border-yellow-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Hoje</p>
+                        <p class="text-3xl font-bold text-navy" id="stat-hoje">0</p>
+                    </div>
+                    <div class="bg-yellow-100 text-yellow-600 w-12 h-12 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-sun text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-card p-6 border-l-4 border-red-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 mb-1">Cancelados</p>
+                        <p class="text-3xl font-bold text-navy" id="stat-cancelados">0</p>
+                    </div>
+                    <div class="bg-red-100 text-red-600 w-12 h-12 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-times-circle text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendário e Filtros -->
+        <div class="grid grid-cols-3 gap-6">
+            <!-- Calendário -->
+            <div class="col-span-2 admin-card p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <button onclick="mudarMes(-1)" class="text-cyan hover:text-cyanLight">
+                        <i class="fa-solid fa-chevron-left text-xl"></i>
+                    </button>
+                    <h2 class="text-xl font-bold text-navy" id="mes_ano">Janeiro 2026</h2>
+                    <button onclick="mudarMes(1)" class="text-cyan hover:text-cyanLight">
+                        <i class="fa-solid fa-chevron-right text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- Dias da semana -->
+                <div class="grid grid-cols-7 gap-1 mb-2">
+                    <div class="text-center text-sm font-medium text-gray-500 py-2">Dom</div>
+                    <div class="text-center text-sm font-medium text-gray-500 py-2">Seg</div>
+                    <div class="text-center text-sm font-medium text-gray-500 py-2">Ter</div>
+                    <div class="text-center text-sm font-medium text-gray-500 py-2">Qua</div>
+                    <div class="text-center text-sm font-medium text-gray-500 py-2">Qui</div>
+                    <div class="text-center text-sm font-medium text-gray-500 py-2">Sex</div>
+                    <div class="text-center text-sm font-medium text-gray-500 py-2">Sáb</div>
+                </div>
+
+                <!-- Dias do mês -->
+                <div class="grid grid-cols-7 gap-1" id="calendario-dias">
+                    <!-- Preenchido via JavaScript -->
+                </div>
+            </div>
+
+            <!-- Consultas do dia selecionado -->
+            <div class="admin-card p-6">
+                <h3 class="text-lg font-bold text-navy mb-4">
+                    Consultas de <span id="data_selecionada">Hoje</span>
+                </h3>
+
+                <div class="space-y-3 max-h-[500px] overflow-y-auto" id="consultas-dia">
+                    <!-- Preenchido via JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Consultas da Semana -->
+        <div class="mt-8 admin-card p-6">
+            <h3 class="text-lg font-bold text-navy mb-4">Consultas da Semana</h3>
+
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b">
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Horário</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Cliente</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Tipo</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Status</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-500">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="consultas-tabela">
+                        <!-- Preenchido via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal: Nova/Editar Consulta -->
+    <div id="consulta-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-navy" id="modal-titulo">Nova Consulta</h3>
+                    <button onclick="closeModal('consulta')" class="text-gray-400 hover:text-gray-600">
+                        <i class="fa-solid fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <form id="consulta-form" class="p-6">
+                <input type="hidden" id="consulta-id">
+
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- Cliente -->
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Cliente *</label>
+                        <input type="text" id="cliente_busca" class="w-full admin-input" placeholder="Buscar cliente por nome...">
+                        <input type="hidden" id="cliente_id">
+                        <div id="cliente-suggestions" class="absolute bg-white border shadow-lg rounded-lg max-h-60 overflow-y-auto hidden z-10"></div>
+                    </div>
+
+                    <!-- Data -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Data *</label>
+                        <input type="date" id="data_consulta" required class="w-full admin-input">
+                    </div>
+
+                    <!-- Horário -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Horário *</label>
+                        <select id="horario_inicio" required class="w-full admin-input">
+                            <!-- Preenchido dinamicamente -->
+                        </select>
+                    </div>
+
+                    <!-- Tipo de Consulta -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Consulta *</label>
+                        <select id="tipo_consulta" required class="w-full admin-input">
+                            <option value="exame_rotina">Exame de Rotina</option>
+                            <option value="exame_completo">Exame Completo</option>
+                            <option value="acompanhamento">Acompanhamento</option>
+                            <option value="emergencia">Emergência</option>
+                            <option value="entrega_lentes">Entrega de Lentes</option>
+                        </select>
+                    </div>
+
+                    <!-- Status -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+                        <select id="status" required class="w-full admin-input">
+                            <option value="agendado">Agendado</option>
+                            <option value="confirmado">Confirmado</option>
+                            <option value="em_andamento">Em Andamento</option>
+                            <option value="concluido">Concluído</option>
+                            <option value="cancelado">Cancelado</option>
+                            <option value="no_show">Não Compareceu</option>
+                        </select>
+                    </div>
+
+                    <!-- Motivo -->
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Motivo da Consulta</label>
+                        <textarea id="motivo_consulta" rows="2" class="w-full admin-input" placeholder="Descreva o motivo..."></textarea>
+                    </div>
+
+                    <!-- Observações -->
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Observações</label>
+                        <textarea id="observacoes" rows="3" class="w-full admin-input" placeholder="Observações adicionais..."></textarea>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 mt-6">
+                    <button type="submit" class="flex-1 admin-btn-primary px-6 py-3 rounded-lg font-medium transition-colors">
+                        Salvar Consulta
+                    </button>
+                    <button type="button" onclick="closeModal('consulta')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium transition-colors">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Detalhes da Consulta -->
+    <div id="detalhes-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-navy">Detalhes da Consulta</h3>
+                    <button onclick="closeModal('detalhes')" class="text-gray-400 hover:text-gray-600">
+                        <i class="fa-solid fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-6" id="detalhes-conteudo">
+                <!-- Preenchido via JavaScript -->
+            </div>
+
+            <div class="p-6 border-t bg-gray-50">
+                <div class="flex gap-3">
+                    <button onclick="enviarLembrete()" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        <i class="fa-solid fa-paper-plane mr-2"></i>
+                        Enviar Lembrete
+                    </button>
+                    <button onclick="closeModal('detalhes')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        Fechar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-3"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="../../supabaseClient.js"></script>
+    <script src="js/agenda.js"></script>
+</body>
+</html>

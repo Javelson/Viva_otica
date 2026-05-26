@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prontuário Digital | Admin - Viva Óptica</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../admin.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: '#0D1B2E',
+                        cyan: '#00aadc',
+                        magenta: '#e91e8c',
+                        yellow: '#f5c800',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .eye-diagram {
+            width: 120px;
+            height: 120px;
+            border: 3px solid #0D1B2E;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        }
+        .prescription-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-left: 4px solid #00aadc;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-64 admin-sidebar text-white flex-shrink-0 hidden md:flex flex-col">
+            <div class="p-6 border-b border-white/10 text-center">
+                <img src="../Logo/viva_logo_branco.jpeg" alt="Viva Óptica Logo" class="h-12 mx-auto mb-3 bg-white rounded-lg p-2">
+                <p class="text-xs text-gray-400">Painel Admin</p>
+            </div>
+            <nav class="flex-1 overflow-y-auto py-4">
+                <a href="index.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                    <i class="fa-solid fa-chart-line w-6"></i>
+                    <span class="ml-3">Dashboard</span>
+                </a>
+                <a href="slideshow.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                    <i class="fa-solid fa-images w-6"></i>
+                    <span class="ml-3">Slideshow</span>
+                </a>
+                <a href="produtos.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                    <i class="fa-solid fa-box w-6"></i>
+                    <span class="ml-3">Produtos</span>
+                </a>
+                <a href="prontuario.html" class="flex items-center px-6 py-3 text-sm bg-cyan/20 border-r-3 border-cyan transition-colors">
+                    <i class="fa-solid fa-file-medical w-6"></i>
+                    <span class="ml-3">Prontuário</span>
+                </a>
+                <a href="configuracoes.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                    <i class="fa-solid fa-cog w-6"></i>
+                    <span class="ml-3">Configurações</span>
+                </a>
+                <a href="#" onclick="logout()" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                    <i class="fa-solid fa-sign-out-alt w-6"></i>
+                    <span class="ml-3">Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <header class="bg-white shadow-sm border-b admin-header">
+                <div class="px-6 py-4 flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-navy">Prontuário Digital</h1>
+                        <p class="text-sm text-gray-500 mt-1">Gestão completa de receitas e exames oftalmológicos</p>
+                    </div>
+                    <button onclick="openModal()" class="admin-btn-primary px-6 py-2 rounded-lg font-medium transition-colors flex items-center">
+                        <i class="fa-solid fa-plus mr-2"></i>
+                        Novo Prontuário
+                    </button>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <main class="flex-1 overflow-y-auto p-6">
+                <!-- Filters -->
+                <div class="admin-card p-4 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Buscar Cliente</label>
+                            <input type="text" id="search-client" placeholder="Nome ou telefone..."
+                                class="w-full px-4 py-2 admin-input focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Filtrar por Data</label>
+                            <input type="date" id="filter-date"
+                                class="w-full px-4 py-2 admin-input focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Exame</label>
+                            <select id="filter-type"
+                                class="w-full px-4 py-2 admin-input focus:border-transparent">
+                                <option value="">Todos</option>
+                                <option value="refracao">Refração</option>
+                                <option value="avaliacao">Avaliação</option>
+                                <option value="controle">Controle</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button onclick="loadProntuarios()"
+                                class="w-full bg-navy hover:bg-navyLight text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                <i class="fa-solid fa-search mr-2"></i>
+                                Buscar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading -->
+                <div id="loading" class="hidden flex items-center justify-center h-64">
+                    <div class="animate-spin rounded-full h-12 w-12 border-4 border-cyan border-t-transparent"></div>
+                </div>
+
+                <!-- Prontuários List -->
+                <div id="prontuarios-list" class="space-y-4">
+                    <!-- Prontuários serão renderizados aqui -->
+                </div>
+
+                <!-- Empty State -->
+                <div id="empty-state" class="hidden text-center py-12">
+                    <i class="fa-solid fa-file-medical text-6xl text-gray-300 mb-4"></i>
+                    <p class="text-gray-500 text-lg">Nenhum prontuário encontrado.</p>
+                    <button onclick="openModal()" class="mt-4 text-cyan hover:text-cyanLight font-medium">
+                        Criar o primeiro prontuário
+                    </button>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal de Novo/Editar Prontuário -->
+    <div id="prontuario-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl my-8 overflow-y-auto max-h-[90vh]">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-6 border-b bg-navy text-white">
+                <h2 id="modal-title" class="text-2xl font-bold">
+                    <i class="fa-solid fa-file-prescription mr-2"></i>
+                    Novo Prontuário
+                </h2>
+                <button onclick="closeModal()" class="text-gray-300 hover:text-white transition-colors">
+                    <i class="fa-solid fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <form id="prontuario-form" class="p-6">
+                <input type="hidden" id="prontuario-id">
+
+                <!-- Seleção de Cliente -->
+                <div class="mb-6">
+                    <label for="cliente-search" class="block text-sm font-medium text-gray-700 mb-2">
+                        Cliente *
+                    </label>
+                    <div class="relative">
+                        <input type="text" id="cliente-search" placeholder="Buscar cliente por nome ou telefone..."
+                            class="w-full px-4 py-2 admin-input focus:border-transparent"
+                            onkeyup="searchClientes(event)">
+                        <div id="cliente-results" class="absolute z-10 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-60 overflow-y-auto hidden"></div>
+                    </div>
+                    <input type="hidden" id="cliente-id">
+                    <p id="cliente-info" class="mt-2 text-sm text-cyan font-medium hidden"></p>
+                </div>
+
+                <!-- Informações do Exame -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Data do Exame *</label>
+                        <input type="datetime-local" id="data-exame" required
+                            class="w-full px-4 py-2 admin-input focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Exame *</label>
+                        <select id="tipo-exame" required
+                            class="w-full px-4 py-2 admin-input focus:border-transparent">
+                            <option value="refracao">Refração</option>
+                            <option value="avaliacao">Avaliação</option>
+                            <option value="controle">Controle</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Optometrista *</label>
+                        <input type="text" id="optometrista" required placeholder="Nome do profissional"
+                            class="w-full px-4 py-2 admin-input focus:border-transparent">
+                    </div>
+                </div>
+
+                <!-- Receita Oftalmológica -->
+                <div class="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-6 mb-6 border border-cyan/20">
+                    <h3 class="text-xl font-bold text-navy mb-4">
+                        <i class="fa-solid fa-glasses mr-2 text-cyan"></i>
+                        Receita Oftalmológica
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Olho Direito (OD) -->
+                        <div class="prescription-card p-4 rounded-lg">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="eye-diagram text-cyan">OD</div>
+                                <h4 class="text-lg font-bold text-navy">Olho Direito</h4>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Esférico (SPH)</label>
+                                    <input type="number" step="0.25" id="od_esferico" placeholder="0.00"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-cyan">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Cilíndrico (CYL)</label>
+                                    <input type="number" step="0.25" id="od_cilindrico" placeholder="0.00"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-cyan">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Eixo (AXIS)</label>
+                                    <input type="number" step="5" id="od_eixo" placeholder="0-180" min="0" max="180"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-cyan">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Adição (ADD)</label>
+                                    <input type="number" step="0.25" id="od_adicao" placeholder="0.00"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-cyan">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Olho Esquerdo (OE) -->
+                        <div class="prescription-card p-4 rounded-lg">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="eye-diagram text-magenta">OE</div>
+                                <h4 class="text-lg font-bold text-navy">Olho Esquerdo</h4>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Esférico (SPH)</label>
+                                    <input type="number" step="0.25" id="oe_esferico" placeholder="0.00"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-cyan">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Cilíndrico (CYL)</label>
+                                    <input type="number" step="0.25" id="oe_cilindrico" placeholder="0.00"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-cyan">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Eixo (AXIS)</label>
+                                    <input type="number" step="5" id="oe_eixo" placeholder="0-180" min="0" max="180"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-cyan">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Adição (ADD)</label>
+                                    <input type="number" step="0.25" id="oe_adicao" placeholder="0.00"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-cyan">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DNP -->
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fa-solid fa-ruler-horizontal mr-1 text-cyan"></i>
+                                DNP (Distância Nasopupilar)
+                            </label>
+                            <input type="number" step="0.5" id="dnp" placeholder="63.5"
+                                class="w-full px-4 py-2 admin-input">
+                            <p class="text-xs text-gray-500 mt-1">Medida em milímetros (mm)</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Próximo Exame</label>
+                            <input type="date" id="proximo_exame"
+                                class="w-full px-4 py-2 admin-input">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Observações -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Observações</label>
+                    <textarea id="observacoes" rows="3" placeholder="Histórico clínico, alergias, observações especiais..."
+                        class="w-full px-4 py-2 admin-input focus:border-transparent"></textarea>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex justify-end space-x-4 pt-4 border-t">
+                    <button type="button" onclick="closeModal()"
+                        class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="save-btn"
+                        class="px-6 py-2 admin-btn-primary rounded-lg font-medium transition-colors flex items-center">
+                        <i class="fa-solid fa-save mr-2"></i>
+                        <span>Salvar Prontuário</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed bottom-8 left-8 z-50"></div>
+
+    <!-- Scripts -->
+    <script src="../supabaseClient.js"></script>
+    <script src="js/prontuario.js"></script>
+</body>
+</html>

@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fluxo de Laboratório | Admin - Viva Óptica</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../admin.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: '#0D1B2E',
+                        cyan: '#00aadc',
+                        magenta: '#e91e8c',
+                        yellow: '#f5c800',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .timeline-step {
+            position: relative;
+            padding: 1rem;
+            border-left: 3px solid #e5e7eb;
+        }
+        .timeline-step.active {
+            border-left-color: #00aadc;
+            background: linear-gradient(90deg, #f0f9ff 0%, transparent 100%);
+        }
+        .timeline-step.completed {
+            border-left-color: #10b981;
+        }
+        .status-badge {
+            transition: all 0.3s ease;
+        }
+        .work-order-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-64 admin-sidebar text-white flex-shrink-0 hidden md:flex flex-col">
+            <div class="p-6 border-b border-white/10 text-center">
+                <img src="../Logo/viva_logo_branco.jpeg" alt="Viva Óptica Logo" class="h-12 mx-auto mb-3 bg-white rounded-lg p-2">
+                <p class="text-xs text-gray-400">Painel Admin</p>
+            </div>
+            <nav class="flex-1 overflow-y-auto py-4">
+                <a href="index.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                    <i class="fa-solid fa-chart-line w-6"></i>
+                    <span class="ml-3">Dashboard</span>
+                </a>
+                <a href="slideshow.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                    <i class="fa-solid fa-images w-6"></i>
+                    <span class="ml-3">Slideshow</span>
+                </a>
+                <a href="produtos.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                    <i class="fa-solid fa-box w-6"></i>
+                    <span class="ml-3">Produtos</span>
+                </a>
+                <a href="prontuario.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                    <i class="fa-solid fa-file-medical w-6"></i>
+                    <span class="ml-3">Prontuário</span>
+                </a>
+                <a href="laboratorio.html" class="flex items-center px-6 py-3 text-sm bg-cyan/20 border-r-3 border-cyan transition-colors">
+                    <i class="fa-solid fa-industry w-6"></i>
+                    <span class="ml-3">Laboratório</span>
+                </a>
+                <a href="configuracoes.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                    <i class="fa-solid fa-cog w-6"></i>
+                    <span class="ml-3">Configurações</span>
+                </a>
+                <a href="#" onclick="logout()" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                    <i class="fa-solid fa-sign-out-alt w-6"></i>
+                    <span class="ml-3">Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <header class="bg-white shadow-sm border-b admin-header">
+                <div class="px-6 py-4 flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-navy">Fluxo de Laboratório</h1>
+                        <p class="text-sm text-gray-500 mt-1">Gestão de ordens de produção e tracking de status</p>
+                    </div>
+                    <button onclick="openModal()" class="admin-btn-primary px-6 py-2 rounded-lg font-medium transition-colors flex items-center">
+                        <i class="fa-solid fa-plus mr-2"></i>
+                        Nova Ordem
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dashboard Stats -->
+            <div class="bg-white border-b">
+                <div class="px-6 py-4 grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div class="text-center p-3 bg-blue-50 rounded-lg">
+                        <div class="text-2xl font-bold text-blue-600" id="stat-conferencia">0</div>
+                        <div class="text-xs text-gray-600">Em Conferência</div>
+                    </div>
+                    <div class="text-center p-3 bg-yellow-50 rounded-lg">
+                        <div class="text-2xl font-bold text-yellow-600" id="stat-enviado">0</div>
+                        <div class="text-xs text-gray-600">Enviado ao Lab</div>
+                    </div>
+                    <div class="text-center p-3 bg-purple-50 rounded-lg">
+                        <div class="text-2xl font-bold text-purple-600" id="stat-producao">0</div>
+                        <div class="text-xs text-gray-600">Em Produção</div>
+                    </div>
+                    <div class="text-center p-3 bg-green-50 rounded-lg">
+                        <div class="text-2xl font-bold text-green-600" id="stat-pronto">0</div>
+                        <div class="text-xs text-gray-600">Pronto</div>
+                    </div>
+                    <div class="text-center p-3 bg-red-50 rounded-lg">
+                        <div class="text-2xl font-bold text-red-600" id="stat-atrasado">0</div>
+                        <div class="text-xs text-gray-600">Atrasados</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <main class="flex-1 overflow-y-auto p-6">
+                <!-- Filters -->
+                <div class="admin-card p-4 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
+                            <input type="text" id="search" placeholder="Número, cliente..."
+                                class="w-full px-4 py-2 admin-input focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                            <select id="filter-status"
+                                class="w-full px-4 py-2 admin-input focus:border-transparent">
+                                <option value="">Todos</option>
+                                <option value="conferencia">Em Conferência</option>
+                                <option value="enviado_lab">Enviado ao Lab</option>
+                                <option value="em_producao">Em Produção</option>
+                                <option value="controle_qualidade">Controle de Qualidade</option>
+                                <option value="pronto">Pronto</option>
+                                <option value="entregue">Entregue</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Prioridade</label>
+                            <select id="filter-priority"
+                                class="w-full px-4 py-2 admin-input focus:border-transparent">
+                                <option value="">Todas</option>
+                                <option value="baixa">Baixa</option>
+                                <option value="normal">Normal</option>
+                                <option value="alta">Alta</option>
+                                <option value="urgente">Urgente</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
+                            <select id="filter-type"
+                                class="w-full px-4 py-2 admin-input focus:border-transparent">
+                                <option value="">Todos</option>
+                                <option value="lente">Lente</option>
+                                <option value="armacao">Armação</option>
+                                <option value="completo">Completo</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button onclick="loadWorkOrders()"
+                                class="w-full bg-navy hover:bg-navyLight text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                <i class="fa-solid fa-search mr-2"></i>
+                                Buscar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading -->
+                <div id="loading" class="hidden flex items-center justify-center h-64">
+                    <div class="animate-spin rounded-full h-12 w-12 border-4 border-cyan border-t-transparent"></div>
+                </div>
+
+                <!-- Work Orders Grid -->
+                <div id="work-orders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Work Orders serão renderizadas aqui -->
+                </div>
+
+                <!-- Empty State -->
+                <div id="empty-state" class="hidden text-center py-12">
+                    <i class="fa-solid fa-industry text-6xl text-gray-300 mb-4"></i>
+                    <p class="text-gray-500 text-lg">Nenhuma ordem de produção encontrada.</p>
+                    <button onclick="openModal()" class="mt-4 text-cyan hover:text-cyanLight font-medium">
+                        Criar a primeira ordem
+                    </button>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal de Nova/Editar Ordem -->
+    <div id="workorder-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl my-8 overflow-y-auto max-h-[90vh]">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-6 border-b bg-navy text-white">
+                <h2 id="modal-title" class="text-2xl font-bold">
+                    <i class="fa-solid fa-industry mr-2"></i>
+                    Nova Ordem de Produção
+                </h2>
+                <button onclick="closeModal()" class="text-gray-300 hover:text-white transition-colors">
+                    <i class="fa-solid fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <form id="workorder-form" class="p-6">
+                <input type="hidden" id="workorder-id">
+
+                <!-- Informaçóes Básicas -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Cliente *</label>
+                        <div class="relative">
+                            <input type="text" id="cliente-search" placeholder="Buscar cliente..."
+                                class="w-full px-4 py-2 admin-input"
+                                onkeyup="searchClientes(event)">
+                            <div id="cliente-results" class="absolute z-10 w-full bg-white border border-gray-300 rounded-lg mt-1 max-h-60 overflow-y-auto hidden"></div>
+                        </div>
+                        <input type="hidden" id="cliente-id">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Produto *</label>
+                        <select id="tipo_produto" required
+                            class="w-full px-4 py-2 admin-input">
+                            <option value="lente">Lente</option>
+                            <option value="armacao">Armação</option>
+                            <option value="completo">Completo (Lente + Armação)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Detalhes do Produto -->
+                <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                    <h3 class="text-lg font-bold text-navy mb-4">
+                        <i class="fa-solid fa-box mr-2 text-cyan"></i>
+                        Detalhes do Produto
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Marca</label>
+                            <input type="text" id="marca" placeholder="Ex: Essilor, Zeiss..."
+                                class="w-full px-4 py-2 admin-input">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Modelo</label>
+                            <input type="text" id="modelo" placeholder="Ex: Varilux, Crizal..."
+                                class="w-full px-4 py-2 admin-input">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Cor/Tamanho</label>
+                            <input type="text" id="cor_tamanho" placeholder="Ex: Preto, 54mm"
+                                class="w-full px-4 py-2 admin-input">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Especificações da Lente -->
+                <div class="bg-blue-50 rounded-lg p-4 mb-6 border border-cyan/20">
+                    <h3 class="text-lg font-bold text-navy mb-4">
+                        <i class="fa-solid fa-glasses mr-2 text-cyan"></i>
+                        Especificações da Lente
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Índice de Refração</label>
+                            <select id="indice_refracao"
+                                class="w-full px-4 py-2 admin-input">
+                                <option value="">Selecione...</option>
+                                <option value="1.50">1.50 - Standard</option>
+                                <option value="1.56">1.56 - Médio</option>
+                                <option value="1.60">1.60 - Alto</option>
+                                <option value="1.67">1.67 - Ultrafino</option>
+                                <option value="1.74">1.74 - Máximo</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Tratamentos</label>
+                            <select id="tratamento"
+                                class="w-full px-4 py-2 admin-input">
+                                <option value="">Selecione...</option>
+                                <option value="antirreflexo">Antirreflexo</option>
+                                <option value="fotocromatico">Fotocromático (Transições)</option>
+                                <option value="azul">Filtro Azul</option>
+                                <option value="antirreflexo + azul">Antirreflexo + Filtro Azul</option>
+                                <option value="personalizado">Personalizado</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="tratamento_personalizado_div" class="hidden mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tratamento Personalizado</label>
+                        <input type="text" id="tratamento_personalizado" placeholder="Especifique os tratamentos..."
+                            class="w-full px-4 py-2 admin-input">
+                    </div>
+
+                    <!-- Receita -->
+                    <div class="grid grid-cols-2 gap-4 mt-4 pt-4 border-t">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Olho Direito (OD)</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <input type="number" step="0.25" id="od_esferico" placeholder="ESF"
+                                    class="px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-cyan">
+                                <input type="number" step="0.25" id="od_cilindrico" placeholder="CIL"
+                                    class="px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-cyan">
+                                <input type="number" step="5" id="od_eixo" placeholder="EIX" min="0" max="180"
+                                    class="px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-cyan">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Olho Esquerdo (OE)</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <input type="number" step="0.25" id="oe_esferico" placeholder="ESF"
+                                    class="px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-cyan">
+                                <input type="number" step="0.25" id="oe_cilindrico" placeholder="CIL"
+                                    class="px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-cyan">
+                                <input type="number" step="5" id="oe_eixo" placeholder="EIX" min="0" max="180"
+                                    class="px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-cyan">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">DNP (mm)</label>
+                        <input type="number" step="0.5" id="dnp" placeholder="63.5"
+                            class="w-full px-4 py-2 admin-input">
+                    </div>
+                </div>
+
+                <!-- Prazos e Prioridade -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Prazo de Entrega *</label>
+                        <input type="date" id="prazo_entrega" required
+                            class="w-full px-4 py-2 admin-input">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Prioridade *</label>
+                        <select id="prioridade" required
+                            class="w-full px-4 py-2 admin-input">
+                            <option value="baixa">Baixa</option>
+                            <option value="normal" selected>Normal</option>
+                            <option value="alta">Alta</option>
+                            <option value="urgente">Urgente</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center pt-6">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="taxa_emergencia"
+                                class="w-4 h-4 text-cyan border-gray-300 rounded focus:ring-cyan">
+                            <span class="ml-2 text-sm text-gray-700">Taxa de Emergência</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Observações -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Observações</label>
+                    <textarea id="observacoes" rows="3" placeholder="Informações adicionais sobre o pedido..."
+                        class="w-full px-4 py-2 admin-input"></textarea>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex justify-end space-x-4 pt-4 border-t">
+                    <button type="button" onclick="closeModal()"
+                        class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit" id="save-btn"
+                        class="px-6 py-2 admin-btn-primary rounded-lg font-medium transition-colors flex items-center">
+                        <i class="fa-solid fa-save mr-2"></i>
+                        <span>Criar Ordem</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Atualização de Status -->
+    <div id="status-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6">
+            <h3 class="text-xl font-bold text-navy mb-4">
+                <i class="fa-solid fa-arrow-right mr-2 text-cyan"></i>
+                Atualizar Status
+            </h3>
+            <input type="hidden" id="status-workorder-id">
+
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Novo Status *</label>
+                <select id="status-novo"
+                    class="w-full px-4 py-2 admin-input"
+                    onchange="updateStatusOptions()">
+                    <option value="">Selecione...</option>
+                    <option value="conferencia">Em Conferência</option>
+                    <option value="enviado_lab">Enviado ao Laboratório</option>
+                    <option value="em_producao">Em Produção</option>
+                    <option value="controle_qualidade">Controle de Qualidade</option>
+                    <option value="pronto">Pronto - Aguardando Retirada</option>
+                    <option value="entregue">Entregue ao Cliente</option>
+                    <option value="cancelado">Cancelado</option>
+                </select>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Observações da Mudança</label>
+                <textarea id="status-observacoes" rows="3" placeholder="Detalhes sobre esta mudança de status..."
+                    class="w-full px-4 py-2 admin-input"></textarea>
+            </div>
+
+            <div class="flex justify-end space-x-4">
+                <button type="button" onclick="document.getElementById('status-modal').classList.add('hidden')"
+                    class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                    Cancelar
+                </button>
+                <button type="button" onclick="confirmStatusUpdate()"
+                    class="px-6 py-2 admin-btn-primary rounded-lg font-medium transition-colors">
+                    Atualizar Status
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed bottom-8 left-8 z-50"></div>
+
+    <!-- Scripts -->
+    <script src="../supabaseClient.js"></script>
+    <script src="js/laboratorio.js"></script>
+</body>
+</html>

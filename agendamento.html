@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>Agendar Consulta | Viva Óptica</title>
+ <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+ <link rel="preconnect" href="https://fonts.googleapis.com">
+ <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+ <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+ <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+ <script>
+ tailwind.config = {
+ theme: {
+ extend: {
+ colors: {
+ navy: '#1a2a4a',
+ cyan: '#00aadc',
+ magenta: '#e91e8c',
+ yellow: '#f5c800',
+ },
+ fontFamily: {
+ sans: ['Inter', 'sans-serif'],
+ }
+ }
+ }
+ }
+ </script>
+ <link rel="stylesheet" href="style.css">
+</head>
+<body class="font-sans text-gray-900 bg-gray-50">
+
+<!-- ========== NAVBAR ========== -->
+<nav class="bg-white sticky top-0 z-50 shadow-md border-b-2 border-cyan">
+ <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+ <div class="flex items-center justify-between h-20">
+ <!-- Logo -->
+ <div class="flex-shrink-0">
+ <a href="index.html" class="flex items-center">
+ <img src="Logo/viva_logo_branco.jpeg" alt="Viva Óptica" class="h-12 w-auto object-contain">
+ </a>
+ </div>
+
+ <!-- Desktop Menu -->
+ <div class="hidden md:flex items-center space-x-8">
+ <a href="index.html" class="text-navy hover:text-cyan transition-colors font-medium">Início</a>
+ <a href="paginas/produtos.html" class="text-navy hover:text-cyan transition-colors font-medium">Produtos</a>
+ <a href="paginas/servicos.html" class="text-navy hover:text-cyan transition-colors font-medium">Serviços</a>
+ <a href="paginas/sobre.html" class="text-navy hover:text-cyan transition-colors font-medium">Sobre</a>
+ <a href="paginas/contacto.html" class="text-navy hover:text-cyan transition-colors font-medium">Contacto</a>
+ <a href="agendamento.html" class="text-cyan font-bold border-b-2 border-cyan pb-1">Agendar</a>
+ </div>
+
+ <!-- Mobile Menu Button -->
+ <button id="mobile-menu-btn" class="md:hidden text-navy hover:text-cyan">
+ <i class="fas fa-bars text-2xl"></i>
+ </button>
+ </div>
+
+ <!-- Mobile Menu -->
+ <div id="mobile-menu" class="hidden md:hidden border-t border-gray-200">
+ <div class="px-4 py-4 space-y-3">
+ <a href="index.html" class="block text-navy hover:text-cyan font-medium">Início</a>
+ <a href="paginas/produtos.html" class="block text-navy hover:text-cyan font-medium">Produtos</a>
+ <a href="paginas/servicos.html" class="block text-navy hover:text-cyan font-medium">Serviços</a>
+ <a href="paginas/sobre.html" class="block text-navy hover:text-cyan font-medium">Sobre</a>
+ <a href="paginas/contacto.html" class="block text-navy hover:text-cyan font-medium">Contacto</a>
+ <a href="agendamento.html" class="block text-cyan font-bold">Agendar</a>
+ </div>
+ </div>
+</nav>
+
+<main>
+<section class="bg-gradient-to-r from-navy to-cyan/80 py-16 text-center text-white">
+ <div class="max-w-7xl mx-auto px-4" data-aos="fade-down">
+ <h1 class="text-4xl md:text-5xl font-bold mb-4">Agendar Consulta</h1>
+ <p class="mt-4 text-gray-100">Marque a sua consulta de avaliação visual</p>
+ </div>
+</section>
+
+<section class="py-16 bg-gray-50">
+ <div class="max-w-3xl mx-auto px-4">
+ <div class="bg-white rounded-2xl shadow-xl p-8" data-aos="fade-up">
+
+ <div class="flex justify-center mb-8">
+ <div class="flex items-center space-x-4">
+ <div class="flex items-center">
+ <div class="w-10 h-10 bg-cyan text-white rounded-full flex items-center justify-center font-bold">1</div>
+ <span class="ml-2 text-sm text-gray-600 hidden sm:inline">Dados</span>
+ </div>
+ <div class="w-12 h-0.5 bg-gray-300"></div>
+ <div class="flex items-center">
+ <div class="w-10 h-10 bg-cyan text-white rounded-full flex items-center justify-center font-bold">2</div>
+ <span class="ml-2 text-sm text-gray-600 hidden sm:inline">Consulta</span>
+ </div>
+ <div class="w-12 h-0.5 bg-gray-300"></div>
+ <div class="flex items-center">
+ <div class="w-10 h-10 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center font-bold">3</div>
+ <span class="ml-2 text-sm text-gray-600 hidden sm:inline">Confirmação</span>
+ </div>
+ </div>
+ </div>
+
+ <form id="agendamento-form" class="space-y-6">
+ <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+ <div>
+ <label for="nome" class="block text-sm font-medium text-gray-700 mb-2">
+ <i class="fa-regular fa-user mr-2 text-cyan"></i>Nome Completo
+ </label>
+ <input type="text" id="nome" name="nome" required
+ class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan focus:border-cyan transition-all"
+ placeholder="Seu nome">
+ </div>
+ <div>
+ <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+ <i class="fa-regular fa-envelope mr-2 text-cyan"></i>Email
+ </label>
+ <input type="email" id="email" name="email" required
+ class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan focus:border-cyan transition-all"
+ placeholder="seu@email.com">
+ </div>
+ <div>
+ <label for="telefone" class="block text-sm font-medium text-gray-700 mb-2">
+ <i class="fa-brands fa-whatsapp mr-2 text-cyan"></i>Telefone
+ </label>
+ <input type="tel" id="telefone" name="telefone" required
+ class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan focus:border-cyan transition-all"
+ placeholder="+244 9XX XXX XXX">
+ </div>
+ <div>
+ <label for="nascimento" class="block text-sm font-medium text-gray-700 mb-2">
+ <i class="fa-regular fa-calendar mr-2 text-cyan"></i>Data de Nascimento
+ </label>
+ <input type="date" id="nascimento" name="nascimento" required
+ class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan focus:border-cyan transition-all">
+ </div>
+ </div>
+
+ <div>
+ <label class="block text-sm font-medium text-gray-700 mb-3">
+ <i class="fa-solid fa-eye mr-2 text-cyan"></i>Tipo de Consulta
+ </label>
+ <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+ <label class="relative flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-cyan transition-all group">
+ <input type="radio" name="tipo_consulta" value="primeira" class="w-4 h-4 text-cyan focus:ring-cyan" checked>
+ <div class="ml-3">
+ <div class="font-medium text-gray-900 group-hover:text-cyan">1ª Vez</div>
+ <div class="text-xs text-gray-500">Avaliação completa</div>
+ </div>
+ </label>
+ <label class="relative flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-cyan transition-all group">
+ <input type="radio" name="tipo_consulta" value="retorno">
+ <div class="ml-3">
+ <div class="font-medium text-gray-900 group-hover:text-cyan">Retorno</div>
+ <div class="text-xs text-gray-500">Já é cliente</div>
+ </div>
+ </label>
+ <label class="relative flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-cyan transition-all group">
+ <input type="radio" name="tipo_consulta" value="urgencia">
+ <div class="ml-3">
+ <div class="font-medium text-gray-900 group-hover:text-cyan">Urgência</div>
+ <div class="text-xs text-gray-500">Atendimento rápido</div>
+ </div>
+ </label>
+ </div>
+ </div>
+
+ <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+ <div>
+ <label for="data" class="block text-sm font-medium text-gray-700 mb-2">
+ <i class="fa-regular fa-calendar-check mr-2 text-cyan"></i>Data Pretendida
+ </label>
+ <input type="date" id="data" name="data" required
+ class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan focus:border-cyan transition-all">
+ </div>
+ <div>
+ <label for="hora" class="block text-sm font-medium text-gray-700 mb-2">
+ <i class="fa-regular fa-clock mr-2 text-cyan"></i>Horário
+ </label>
+ <select id="hora" name="hora" required
+ class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan focus:border-cyan transition-all">
+ <option value="">Selecione...</option>
+ <option value="08:00">08:00</option>
+ <option value="08:30">08:30</option>
+ <option value="09:00">09:00</option>
+ <option value="09:30">09:30</option>
+ <option value="10:00">10:00</option>
+ <option value="10:30">10:30</option>
+ <option value="11:00">11:00</option>
+ <option value="11:30">11:30</option>
+ <option value="13:00">13:00</option>
+ <option value="13:30">13:30</option>
+ <option value="14:00">14:00</option>
+ <option value="14:30">14:30</option>
+ <option value="15:00">15:00</option>
+ <option value="15:30">15:30</option>
+ <option value="16:00">16:00</option>
+ <option value="16:30">16:30</option>
+ <option value="17:00">17:00</option>
+ </select>
+ </div>
+ </div>
+
+ <div>
+ <label for="observacoes" class="block text-sm font-medium text-gray-700 mb-2">
+ <i class="fa-regular fa-comment-dots mr-2 text-cyan"></i>Observações (opcional)
+ </label>
+ <textarea id="observacoes" name="observacoes" rows="4"
+ class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan focus:border-cyan transition-all"
+ placeholder="Descreva o motivo da consulta ou alguma necessidade específica..."></textarea>
+ </div>
+
+ <div class="flex items-start">
+ <input type="checkbox" id="termos" name="termos" required class="w-4 h-4 text-cyan focus:ring-cyan mt-1">
+ <label for="termos" class="ml-2 text-sm text-gray-600">
+ Concordo com a <a href="#" class="text-cyan hover:underline">política de privacidade</a> e o tratamento dos meus dados pessoais.
+ </label>
+ </div>
+
+ <button type="submit" id="submit-btn"
+ class="w-full bg-magenta hover:bg-magenta/90 text-white font-bold py-4 rounded-lg transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+ <i class="fa-brands fa-whatsapp mr-2"></i>Confirmar Agendamento
+ </button>
+ <div id="form-feedback" class="hidden p-3 rounded-lg text-sm text-center"></div>
+ </div>
+ </form>
+ </div>
+ </div>
+</section>
+
+<section class="py-16 bg-white">
+ <div class="max-w-7xl mx-auto px-4">
+ <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+ <div class="text-center p-6" data-aos="fade-up" data-aos-delay="100">
+ <div class="w-16 h-16 bg-cyan/10 rounded-full flex items-center justify-center mx-auto mb-4">
+ <i class="fa-solid fa-clock text-2xl text-cyan"></i>
+ </div>
+ <h3 class="font-bold text-lg mb-2">Horário de Funcionamento</h3>
+ <p class="text-gray-600">Seg - Sex: 8h às 18h<br>Sáb: 8h às 12h</p>
+ </div>
+ <div class="text-center p-6" data-aos="fade-up" data-aos-delay="200">
+ <div class="w-16 h-16 bg-magenta/10 rounded-full flex items-center justify-center mx-auto mb-4">
+ <i class="fa-solid fa-location-dot text-2xl text-magenta"></i>
+ </div>
+ <h3 class="font-bold text-lg mb-2">Localização</h3>
+ <p class="text-gray-600">Luanda, Angola<br>Próximo ao centro da cidade</p>
+ </div>
+ <div class="text-center p-6" data-aos="fade-up" data-aos-delay="300">
+ <div class="w-16 h-16 bg-yellow/10 rounded-full flex items-center justify-center mx-auto mb-4">
+ <i class="fa-solid fa-phone text-2xl text-yellow"></i>
+ </div>
+ <h3 class="font-bold text-lg mb-2">Contacto</h3>
+ <p class="text-gray-600">Tel: +244 954 145 065<br>Email: geral@vivaoptica.ao</p>
+ </div>
+ </div>
+ </div>
+</section>
+</main>
+
+<a href="https://wa.me/244954145065" target="_blank" class="fixed bottom-8 right-8 bg-green-500 text-white w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-2xl hover:scale-110 transition-transform z-50 animate-bounce">
+ <i class="fa-brands fa-whatsapp"></i>
+</a>
+
+<footer class="bg-navy text-white py-12 mt-20">
+ <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+ <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left mb-8">
+ <div>
+ <h3 class="font-bold text-lg mb-3 text-cyan">Viva Óptica</h3>
+ <p class="text-gray-300">Sua visão é nossa prioridade.</p>
+ </div>
+ <div>
+ <h3 class="font-bold text-lg mb-3 text-cyan">Links Rápidos</h3>
+ <ul class="text-gray-300 space-y-2">
+ <li><a href="index.html" class="hover:text-cyan transition-colors">Início</a></li>
+ <li><a href="paginas/sobre.html" class="hover:text-cyan transition-colors">Sobre Nós</a></li>
+ <li><a href="paginas/contacto.html" class="hover:text-cyan transition-colors">Contacto</a></li>
+ </ul>
+ </div>
+ <div>
+ <h3 class="font-bold text-lg mb-3 text-cyan">Contacte-nos</h3>
+ <p class="text-gray-300">
+ <i class="fas fa-phone text-cyan mr-2"></i>+244 954 145 065<br>
+ <i class="fas fa-envelope text-cyan mr-2"></i>info@vivaoptica.ao
+ </p>
+ </div>
+ </div>
+ <div class="border-t border-gray-700 pt-8 text-center text-gray-400">
+ <p>&copy; 2026 Viva Óptica. Todos os direitos reservados.</p>
+ </div>
+ </div>
+</footer>
+
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Verificar se Supabase está carregado antes de continuar -->
+<script>
+if (typeof supabase === 'undefined') {
+    console.error('❌ [AGENDAMENTO] SDK do Supabase não carregado!');
+} else {
+    console.log('✅ [AGENDAMENTO] SDK do Supabase carregado');
+}
+</script>
+<script src="supabaseClient.js"></script>
+<script>
+// Verificar se window.supabase está disponível
+if (typeof window.supabase === 'undefined') {
+    console.error('❌ [AGENDAMENTO] window.supabase não definido!');
+    alert('Erro: Sistema de agendamento não carregado. Recarregue a página.');
+} else {
+    console.log('✅ [AGENDAMENTO] window.supabase disponível');
+    console.log('🔍 [AGENDAMENTO] Supabase URL:', window.supabase.supabaseUrl);
+}
+</script>
+<!-- Script de agendamento com logs detalhados -->
+<script src="js/agendamento.js"></script>
+<script>
+ AOS.init();
+
+ document.getElementById('mobile-menu-btn')?.addEventListener('click', function() {
+ const menu = document.getElementById('mobile-menu');
+ menu?.classList.toggle('hidden');
+ });
+
+ const dataInput = document.getElementById('data');
+ const nascimentoInput = document.getElementById('nascimento');
+ if (dataInput) {
+ const hoje = new Date().toISOString().split('T')[0];
+ dataInput.min = hoje;
+ }
+ if (nascimentoInput) {
+ const dezoitoAnos = new Date();
+ dezoitoAnos.setFullYear(dezoitoAnos.getFullYear() - 18);
+ nascimentoInput.max = dezoitoAnos.toISOString().split('T')[0];
+ }
+
+ document.getElementById('agendamento-form')?.addEventListener('submit', async function(e) {
+     e.preventDefault();
+
+     const form = this;
+     const submitBtn = document.getElementById('submit-btn');
+     const feedback = document.getElementById('form-feedback');
+     const formData = new FormData(form);
+
+     const dados = {
+         nome: formData.get('nome'),
+         email: formData.get('email'),
+         telefone: formData.get('telefone'),
+         nascimento: formData.get('nascimento'),
+         tipo_consulta: formData.get('tipo_consulta'),
+         data: formData.get('data'),
+         hora: formData.get('hora'),
+         observacoes: formData.get('observacoes')
+     };
+
+     // UI Feedback
+     submitBtn.disabled = true;
+     submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch animate-spin mr-2"></i>A processar...';
+     feedback.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
+
+     try {
+         // 1. Guardar no Supabase (A BASE DE TUDO)
+         const { error } = await getSupabase().from('agendamentos').insert([{
+             nome: dados.nome,
+             email: dados.email,
+             telefone: dados.telefone,
+             nascimento: dados.nascimento,
+             tipo: dados.tipo_consulta,
+             data: dados.data,
+             hora: dados.hora,
+             observacoes: dados.observacoes,
+             status: 'pendente'
+         }]);
+
+         if (error) throw error;
+
+         // 2. Criar Mensagem WhatsApp
+         const mensagem = `*NOVO AGENDAMENTO - Viva Óptica*%0A%0A*Nome:* ${dados.nome}%0A*Email:* ${dados.email}%0A*Telefone:* ${dados.telefone}%0A*Nascimento:* ${dados.nascimento}%0A*Tipo:* ${dados.tipo_consulta}%0A*Data:* ${dados.data}%0A*Hora:* ${dados.hora}%0A*Observações:* ${dados.observacoes || 'Nenhuma'}`;
+
+         // 3. Feedback de Sucesso
+         feedback.textContent = '✅ Agendamento enviado com sucesso! Vamos abrir o WhatsApp para confirmar.';
+         feedback.classList.add('bg-green-100', 'text-green-700');
+         feedback.classList.remove('hidden');
+
+         // 4. Redirecionar para WhatsApp
+         setTimeout(() => {
+             window.open(`https://wa.me/244954145065?text=${mensagem}`, '_blank');
+             form.reset();
+             submitBtn.disabled = false;
+             submitBtn.innerHTML = '<i class="fa-brands fa-whatsapp mr-2"></i>Confirmar Agendamento';
+         }, 1500);
+
+     } catch (err) {
+         console.error('Erro ao agendar:', err);
+         feedback.textContent = '❌ Erro ao guardar agendamento. Tenta novamente ou contacta-nos.';
+         feedback.classList.add('bg-red-100', 'text-red-700');
+         feedback.classList.remove('hidden');
+         submitBtn.disabled = false;
+         submitBtn.innerHTML = '<i class="fa-brands fa-whatsapp mr-2"></i>Confirmar Agendamento';
+     }
+ });
+</script>
+</body>
+</html>

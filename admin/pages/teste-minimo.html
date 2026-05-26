@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste Mínimo</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="../supabaseClient.js"></script>
+    <link rel="stylesheet" href="../admin.css">
+</head>
+<body>
+    <h1>Teste Mínimo</h1>
+    <p>Abra o console (F12) para ver os logs</p>
+    <button onclick="testar()">Testar Supabase</button>
+    <div id="resultado"></div>
+
+    <script>
+        function testar() {
+            console.log('🧪 Teste iniciado');
+            try {
+                if (typeof supabase === 'undefined') {
+                    document.getElementById('resultado').innerHTML = '❌ SDK não carregado';
+                    return;
+                }
+                if (!window.supabase) {
+                    document.getElementById('resultado').innerHTML = '❌ window.supabase não definido';
+                    return;
+                }
+                document.getElementById('resultado').innerHTML = '✅ Supabase OK!';
+                console.log('✅ Supabase pronto');
+            } catch (e) {
+                document.getElementById('resultado').innerHTML = '❌ Erro: ' + e.message;
+            }
+        }
+
+        // Auto-testar
+        window.addEventListener('load', () => {
+            console.log('📋 Página carregada');
+            setTimeout(testar, 500);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,578 @@
+// ============================================
+// APP.JS - Viva Óptica Admin Panel
+// Versão: 9.0 com Formulário Melhorado
+// ============================================
+
+// ============================================
+// ESTADO GLOBAL
+// ============================================
+let supabase = null;
+let agendamentos = [];
+let produtos = [];
+let clientes = [];
+let filtros = {
+ agendamentos: { status: 'todos', busca: '' },
+ produtos: { categoria: 'todos', busca: '' }
+};
+
+// ============================================
+// INICIALIZAÇÃO
+// ============================================
+document.addEventListener('DOMContentLoaded', async () => {
+ console.log('🚀 [APP] Inicializando painel admin...');
+
+ // Inicializar Supabase
+ supabase = await window.getSupabase();
+ if (!supabase) {
+  alert('Erro: Não foi possível conectar ao Supabase');
+  return;
+ }
+
+ console.log('✅ [APP] Supabase pronto');
+
+ // Carregar dados iniciais
+ await Promise.all([
+  loadAgendamentos(),
+  loadProdutos(),
+  loadClientes(),
+  loadConfiguracoes()
+ ]);
+
+ console.log('✅ [APP] Painel inicializado');
+});
+
+// ============================================
+// FUNÇÕES DE AGENDAMENTOS
+// ============================================
+async function loadAgendamentos() {
+ try {
+  const loading = document.getElementById('agendamentos-loading');
+  if (loading) loading.style.display = 'block';
+
+  const { data, error } = await supabase
+   .from('agendamentos')
+   .select('*')
+   .order('criado_em', { ascending: false });
+
+  if (error) throw error;
+
+  agendamentos = data || [];
+  renderAgendamentos();
+
+  if (loading) loading.style.display = 'none';
+ } catch (error) {
+  console.error('Erro ao carregar agendamentos:', error);
+  showToast('Erro ao carregar agendamentos', 'error');
+ }
+}
+
+function renderAgendamentos() {
+ const container = document.getElementById('agendamentos-list');
+ if (!container) return;
+
+ const statusFiltro = filtros.agendamentos.status;
+ const buscaFiltro = filtros.agendamentos.busca.toLowerCase();
+
+ let filtered = agendamentos.filter(appt => {
+  const statusMatch = statusFiltro === 'todos' || appt.status === statusFiltro;
+  const buscaMatch = !buscaFiltro ||
+   appt.nome_cliente?.toLowerCase().includes(buscaFiltro) ||
+   appt.servico?.toLowerCase().includes(buscaFiltro);
+  return statusMatch && buscaMatch;
+ });
+
+ if (filtered.length === 0) {
+  container.innerHTML = `
+ <div class="text-center py-12">
+ <i class="fa-solid fa-calendar-xmark text-6xl text-gray-300 mb-4"></i>
+ <p class="text-gray-500">Nenhum agendamento encontrado</p>
+ </div>
+`;
+  return;
+ }
+
+ container.innerHTML = filtered.map(appt => `
+ <div class="bg-white rounded-lg shadow p-4 border-l-4 border-${getStatusColor(appt.status)}">
+ <div class="flex justify-between items-start">
+ <div>
+ <h4 class="font-semibold text-gray-800">${appt.nome_cliente}</h4>
+ <p class="text-sm text-gray-600">${appt.servico}</p>
+ <p class="text-sm text-gray-500 mt-1">
+ <i class="fa-solid fa-calendar mr-1"></i> ${formatDateTime(appt.data)}
+ ${appt.hora ? `<i class="fa-solid fa-clock ml-3 mr-1"></i> ${appt.hora}` : ''}
+ </p>
+ ${appt.observacoes ? `<p class="text-sm text-gray-500 mt-2 italic">${appt.observacoes}</p>` : ''}
+ </div>
+ <div class="flex items-center space-x-2">
+ <span class="px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(appt.status)}">
+ ${getStatusText(appt.status)}
+ </span>
+ <div class="flex space-x-1">
+ ${appt.status === 'pendente' ? `
+ <button onclick="updateAppointmentStatus('${appt.id}', 'concluido')" class="p-2 bg-green-100 text-green-600 rounded hover:bg-green-200" title="Concluir">
+ <i class="fa-solid fa-check"></i>
+ </button>
+ <button onclick="updateAppointmentStatus('${appt.id}', 'cancelado')" class="p-2 bg-red-100 text-red-600 rounded hover:bg-red-200" title="Cancelar">
+ <i class="fa-solid fa-times"></i>
+ </button>
+ ` : ''}
+ <button onclick="deleteAppointment('${appt.id}')" class="p-2 bg-gray-100 text-gray-600 rounded hover:bg-gray-200" title="Eliminar">
+ <i class="fa-solid fa-trash"></i>
+ </button>
+ </div>
+ </div>
+ </div>
+ </div>
+`.trim()).join('');
+
+ // Atualizar contadores
+ updateAppointmentCounters(filtered);
+}
+
+function updateAppointmentCounters(agendamentosFiltrados) {
+ const counters = {
+  todos: agendamentosFiltrados.length,
+  pendentes: agendamentosFiltrados.filter(a => a.status === 'pendente').length,
+  concluidos: agendamentosFiltrados.filter(a => a.status === 'concluido').length,
+  cancelados: agendamentosFiltrados.filter(a => a.status === 'cancelado').length
+ };
+
+ document.getElementById('counter-todos')?.setAttribute('data-count', counters.todos);
+ document.getElementById('counter-pendentes')?.setAttribute('data-count', counters.pendentes);
+ document.getElementById('counter-concluidos')?.setAttribute('data-count', counters.concluidos);
+ document.getElementById('counter-cancelados')?.setAttribute('data-count', counters.cancelados);
+}
+
+async function updateAppointmentStatus(id, novoStatus) {
+ try {
+  const { error } = await supabase
+   .from('agendamentos')
+   .update({ status: novoStatus })
+   .eq('id', id);
+
+  if (error) throw error;
+
+  agendamentos = agendamentos.map(a =>
+   a.id === id ? { ...a, status: novoStatus } : a
+  );
+
+  renderAgendamentos();
+  showToast('Status atualizado com sucesso!', 'success');
+ } catch (error) {
+  console.error('Erro ao atualizar status:', error);
+  showToast('Erro ao atualizar status', 'error');
+ }
+}
+
+async function deleteAppointment(id) {
+ if (!confirm('Tem certeza que deseja eliminar este agendamento?')) return;
+
+ try {
+  const { error } = await supabase.from('agendamentos').delete().eq('id', id);
+  if (error) throw error;
+
+  agendamentos = agendamentos.filter(a => a.id !== id);
+  renderAgendamentos();
+  showToast('Agendamento eliminado', 'success');
+ } catch (error) {
+  console.error('Erro ao eliminar agendamento:', error);
+  showToast('Erro ao eliminar agendamento', 'error');
+ }
+}
+
+function showManualAppointmentForm() {
+ const main = document.getElementById('main-content');
+ const modal = document.createElement('div');
+ modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+
+ modal.innerHTML = `
+ <div class="bg-white rounded-xl shadow-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+ <div class="flex items-center justify-between mb-6">
+ <h3 class="text-2xl font-bold text-gray-800">
+ <i class="fa-solid fa-calendar-plus text-green-600 mr-2"></i>
+ Novo Agendamento
+ </h3>
+ <button type="button" onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+ <i class="fa-solid fa-times text-xl"></i>
+ </button>
+ </div>
+
+ <form id="appointment-form" class="space-y-5">
+ <div>
+ <label class="block text-sm font-semibold text-gray-700 mb-2">
+ Nome do Cliente <span class="text-red-500">*</span>
+ </label>
+ <div class="relative">
+ <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+ <i class="fa-solid fa-user text-gray-400"></i>
+ </div>
+ <input
+ type="text"
+ id="nome_cliente"
+ name="nome_cliente"
+ required
+ placeholder="Digite o nome completo"
+ class="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all outline-none"
+ oninput="validateField(this)"
+ >
+ </div>
+ <p class="mt-1 text-sm text-red-600 hidden" id="error-nome_cliente"></p>
+ </div>
+
+ <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+ <div>
+ <label class="block text-sm font-semibold text-gray-700 mb-2">
+ Telefone <span class="text-red-500">*</span>
+ </label>
+ <div class="relative">
+ <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+ <i class="fa-solid fa-phone text-gray-400"></i>
+ </div>
+ <input
+ type="tel"
+ id="telefone_cliente"
+ name="telefone_cliente"
+ required
+ placeholder="923 456 789"
+ pattern="[0-9]{9}"
+ class="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all outline-none"
+ oninput="validateField(this)"
+ >
+ </div>
+ <p class="mt-1 text-sm text-red-600 hidden" id="error-telefone_cliente"></p>
+ </div>
+
+ <div>
+ <label class="block text-sm font-semibold text-gray-700 mb-2">
+ Email
+ </label>
+ <div class="relative">
+ <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+ <i class="fa-solid fa-envelope text-gray-400"></i>
+ </div>
+ <input
+ type="email"
+ id="cliente_email"
+ name="cliente_email"
+ placeholder="cliente@email.com"
+ class="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all outline-none"
+ oninput="validateField(this)"
+ >
+ </div>
+ <p class="mt-1 text-sm text-red-600 hidden" id="error-cliente_email"></p>
+ </div>
+ </div>
+
+ <div>
+ <label class="block text-sm font-semibold text-gray-700 mb-2">
+ Servico <span class="text-red-500">*</span>
+ </label>
+ <div class="relative">
+ <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+ <i class="fa-solid fa-glasses text-gray-400"></i>
+ </div>
+ <select
+ id="servico"
+ name="servico"
+ required
+ class="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all outline-none appearance-none bg-white"
+ onchange="validateField(this)"
+ >
+ <option value="">Selecione um servico</option>
+ <option value="Consulta de Visao">Consulta de Visao</option>
+ <option value="Exame de Visao">Exame de Visao</option>
+ <option value="Consulta de Optometria">Consulta de Optometria</option>
+ <option value="Ajuste de Armacao">Ajuste de Armacao</option>
+ <option value="Reparacao de Armacao">Reparacao de Armacao</option>
+ <option value="Compra de Armacao">Compra de Armacao</option>
+ <option value="Compra de Lentes">Compra de Lentes</option>
+ <option value="Outro">Outro</option>
+ </select>
+ <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+ <i class="fa-solid fa-chevron-down text-gray-400"></i>
+ </div>
+ </div>
+ <p class="mt-1 text-sm text-red-600 hidden" id="error-servico"></p>
+ </div>
+
+ <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+ <div>
+ <label class="block text-sm font-semibold text-gray-700 mb-2">
+ Data <span class="text-red-500">*</span>
+ </label>
+ <div class="relative">
+ <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+ <i class="fa-solid fa-calendar text-gray-400"></i>
+ </div>
+ <input
+ type="date"
+ id="data"
+ name="data"
+ required
+ class="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all outline-none"
+ onchange="validateField(this)"
+ >
+ </div>
+ <p class="mt-1 text-sm text-red-600 hidden" id="error-data"></p>
+ </div>
+
+ <div>
+ <label class="block text-sm font-semibold text-gray-700 mb-2">
+ Horario
+ </label>
+ <div class="relative">
+ <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+ <i class="fa-solid fa-clock text-gray-400"></i>
+ </div>
+ <input
+ type="time"
+ id="hora"
+ name="hora"
+ class="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all outline-none"
+ onchange="validateField(this)"
+ >
+ </div>
+ <p class="mt-1 text-sm text-red-600 hidden" id="error-hora"></p>
+ </div>
+ </div>
+
+ <div>
+ <label class="block text-sm font-semibold text-gray-700 mb-2">
+ Observacoes
+ </label>
+ <div class="relative">
+ <div class="absolute top-3 left-3 pointer-events-none">
+ <i class="fa-solid fa-note-sticky text-gray-400"></i>
+ </div>
+ <textarea
+ id="observacoes"
+ name="observacoes"
+ rows="4"
+ placeholder="Adicione notas ou informacoes adicionais..."
+ class="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all outline-none resize-none"
+ ></textarea>
+ </div>
+ </div>
+
+ <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+ <button
+ type="button"
+ onclick="cancelForm()"
+ class="px-6 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium"
+ >
+ <i class="fa-solid fa-times mr-2"></i>Cancelar
+ </button>
+ <button
+ type="submit"
+ id="submit-btn"
+ class="px-6 py-3 text-white bg-green-600 hover:bg-green-700 rounded-lg transition-all font-medium flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+ >
+ <i class="fa-solid fa-calendar-check mr-2"></i>Agendar
+ </button>
+ </div>
+ </form>
+ </div>
+ `;
+
+ main.appendChild(modal);
+
+ const today = new Date().toISOString().split('T')[0];
+ modal.querySelector('#data').setAttribute('min', today);
+
+ window.closeModal = function() {
+  modal.remove();
+ };
+
+ window.cancelForm = function() {
+  const form = modal.querySelector('#appointment-form');
+  form.reset();
+  closeModal();
+ };
+
+ window.validateField = function(field) {
+  const errorEl = document.getElementById(`error-${field.name}`);
+  if (!errorEl) return;
+
+  let isValid = true;
+  let errorMessage = '';
+
+  if (field.required && !field.value.trim()) {
+   isValid = false;
+   errorMessage = 'Este campo é obrigatorio';
+  } else if (field.type === 'email' && field.value && !/\S+@\S+\.\S+/.test(field.value)) {
+   isValid = false;
+   errorMessage = 'Email invalido';
+  } else if (field.name === 'telefone_cliente' && field.value && !/^\d{9}$/.test(field.value.replace(/\s/g, ''))) {
+   isValid = false;
+   errorMessage = 'Telefone deve ter 9 digitos';
+  } else if (field.name === 'data' && field.value) {
+   const selectedDate = new Date(field.value);
+   const today = new Date();
+   today.setHours(0, 0, 0, 0);
+   if (selectedDate < today) {
+    isValid = false;
+    errorMessage = 'Não é possivel agendar datas passadas';
+   }
+  }
+
+  if (isValid) {
+   field.classList.remove('border-red-500', 'border-red-300');
+   field.classList.add('border-green-500', 'border-green-300');
+   errorEl.classList.add('hidden');
+  } else {
+   field.classList.remove('border-green-500', 'border-green-300');
+   field.classList.add('border-red-500', 'border-red-300');
+   errorEl.textContent = errorMessage;
+   errorEl.classList.remove('hidden');
+  }
+
+  updateSubmitButton();
+ };
+
+function updateSubmitButton() {
+  const form = modal.querySelector('#appointment-form');
+  const submitBtn = modal.querySelector('#submit-btn');
+
+  // Check HTML5 validity first
+  const html5Valid = form.checkValidity();
+  if (!html5Valid) {
+    submitBtn.disabled = true;
+    return;
+  }
+
+  // Check custom validation: no fields with red borders (invalid state)
+  const invalidFields = form.querySelectorAll('.border-red-500');
+  const errorMessages = form.querySelectorAll('[id^="error-"]:not(.hidden)' );
+
+  submitBtn.disabled = invalidFields.length > 0 || errorMessages.length > 0;
+}
+
+ modal.querySelector('#appointment-form').addEventListener('input', updateSubmitButton);
+ modal.querySelector('#appointment-form').addEventListener('change', updateSubmitButton);
+
+ modal.querySelector('#appointment-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const form = e.target;
+  const submitBtn = modal.querySelector('#submit-btn');
+
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Processando...';
+
+  const formData = new FormData(form);
+
+  try {
+   const dataValor = formData.get('data');
+   const horaValor = formData.get('hora');
+   let finalData = dataValor;
+
+   if (horaValor && horaValor.includes(':')) {
+    finalData = `${dataValor}T${horaValor}`;
+   }
+
+   const { error: apptError } = await supabase.from('agendamentos').insert([{
+    nome_cliente: formData.get('nome_cliente').trim(),
+    telefone_cliente: formData.get('telefone_cliente').trim(),
+    cliente_email: formData.get('cliente_email')?.trim() || null,
+    servico: formData.get('servico'),
+    data: finalData,
+    hora: horaValor || null,
+    observacoes: formData.get('observacoes')?.trim() || null,
+    status: 'pendente'
+   }]);
+
+   if (apptError) throw apptError;
+
+   modal.remove();
+   loadAgendamentos();
+   showToast('Agendamento criado com sucesso!', 'success');
+
+  } catch (error) {
+   console.error('Erro ao criar agendamento:', error);
+   showToast('Erro ao criar agendamento: ' + error.message, 'error');
+   submitBtn.disabled = false;
+   submitBtn.innerHTML = '<i class="fa-solid fa-calendar-check mr-2"></i>Agendar';
+  }
+ });
+}
+
+// ============================================
+// FUNÇÕES DE PRODUTOS
+// ============================================
+async function loadProdutos() {
+ try {
+  const { data, error } = await supabase
+   .from('produtos')
+   .select('*')
+   .order('criado_em', { ascending: false });
+
+  if (error) throw error;
+
+  produtos = data || [];
+  renderProdutos();
+ } catch (error) {
+  console.error('Erro ao carregar produtos:', error);
+  showToast('Erro ao carregar produtos', 'error');
+ }
+}
+
+function renderProdutos() {
+ const container = document.getElementById('produtos-list');
+ if (!container) return;
+
+ const categoriaFiltro = filtros.produtos.categoria;
+ const buscaFiltro = filtros.produtos.busca.toLowerCase();
+
+ let filtered = produtos.filter(p => {
+  const categoriaMatch = categoriaFiltro === 'todos' || p.categoria === categoriaFiltro;
+  const buscaMatch = !buscaFiltro || p.nome?.toLowerCase().includes(buscaFiltro);
+  return categoriaMatch && buscaMatch;
+ });
+
+ if (filtered.length === 0) {
+  container.innerHTML = `
+ <div class="text-center py-12">
+ <i class="fa-solid fa-box-open text-6xl text-gray-300 mb-4"></i>
+ <p class="text-gray-500">Nenhum produto encontrado</p>
+ </div>
+`;
+  return;
+ }
+
+ container.innerHTML = filtered.map(p => `
+ <div class="bg-white rounded-lg shadow p-4">
+ <div class="flex justify-between items-start">
+ <div>
+ <h4 class="font-semibold text-gray-800">${p.nome}</h4>
+ <p class="text-sm text-gray-600">${p.categoria}</p>
+ <p class="text-lg font-bold text-green-600 mt-2">${formatCurrency(p.preco)}</p>
+ <p class="text-sm text-gray-500 mt-1">Estoque: ${p.estoque || 0}</p>
+ </div>
+ <div class="flex space-x-1">
+ <button onclick="editProduct('${p.id}')" class="p-2 bg-blue-100 text-blue-600 rounded hover:bg-blue-200">
+ <i class="fa-solid fa-edit"></i>
+ </button>
+ <button onclick="deleteProduct('${p.id}')" class="p-2 bg-red-100 text-red-600 rounded hover:bg-red-200">
+ <i class="fa-solid fa-trash"></i>
+ </button>
+ </div>
+ </div>
+ </div>
+`.trim()).join('');
+}
+
+async function deleteProduct(id) {
+ if (!confirm('Tem certeza que deseja eliminar este produto?')) return;
+
+ try {
+  const { error } = await supabase.from('produtos').delete().eq('id', id);
+  if (error) throw error;
+
+  produtos = produtos.filter(p => p.id !== id);
+  renderProdutos();
+  showToast('Produto eliminado', 'success');
+ } catch (error) {
+  console.error('Erro ao eliminar produto:', error);
+  showToast('Erro ao eliminar produto', 'error');
+ }
+}

@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>Viva Óptica | O Futuro é Mais Nítido Aqui</title>
+ <!-- Tailwind CSS via CDN -->
+ <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+ <!-- Google Fonts -->
+ <link rel="preconnect" href="https://fonts.googleapis.com">
+ <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+ <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" crossorigin="anonymous">
+ <!-- Font Awesome para ícones -->
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" crossorigin="anonymous">
+ <!-- AOS Library para animações ao scroll -->
+ <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" crossorigin="anonymous">
+ <script>
+ tailwind.config = {
+ theme: {
+ extend: {
+ colors: {
+ navy: '#1a2a4a',
+ cyan: '#00aadc',
+ magenta: '#e91e8c',
+ yellow: '#f5c800',
+ },
+ fontFamily: {
+ sans: ['Inter', 'sans-serif'],
+ }
+ }
+ }
+ }
+ </script>
+ <link rel="stylesheet" href="style.css">
+</head>
+<body class="font-sans text-gray-900 bg-white">
+
+<!-- ========== NAVBAR ========== -->
+<nav class="bg-white sticky top-0 z-50 shadow-md border-b-2 border-cyan">
+ <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+ <div class="flex items-center justify-between h-20">
+ <!-- Logo -->
+ <div class="flex-shrink-0">
+ <a href="index.html" class="flex items-center">
+ <img src="Logo/viva_logo_branco.jpeg" alt="Viva Óptica" class="h-12 w-auto object-contain">
+ </a>
+ </div>
+
+ <!-- Desktop Menu -->
+ <div class="hidden md:flex items-center space-x-8">
+ <a href="index.html" class="text-cyan font-bold border-b-2 border-cyan pb-1">Início</a>
+ <a href="paginas/produtos.html" class="text-navy hover:text-cyan transition-colors font-medium">Produtos</a>
+ <a href="paginas/servicos.html" class="text-navy hover:text-cyan transition-colors font-medium">Serviços</a>
+ <a href="paginas/sobre.html" class="text-navy hover:text-cyan transition-colors font-medium">Sobre</a>
+ <a href="paginas/contacto.html" class="text-navy hover:text-cyan transition-colors font-medium">Contacto</a>
+ <a href="agendamento.html" class="bg-cyan text-white px-6 py-2 rounded-full font-semibold hover:bg-cyan/90 transition-colors">Agendar</a>
+ <a href="admin/login.html" title="Área Administrativa" class="w-10 h-10 flex items-center justify-center rounded-full text-navy/50 hover:text-cyan hover:bg-cyan/10 transition-all">
+ <i class="fa-solid fa-user-shield text-lg"></i>
+ </a>
+ </div>
+
+ <!-- Mobile Menu Button -->
+ <button id="mobile-menu-btn" class="md:hidden text-navy hover:text-cyan">
+ <i class="fas fa-bars text-2xl"></i>
+ </button>
+ </div>
+
+ <!-- Mobile Menu -->
+ <div id="mobile-menu" class="hidden md:hidden border-t border-gray-200">
+ <div class="px-4 py-4 space-y-3">
+ <a href="index.html" class="block text-cyan font-bold">Início</a>
+ <a href="paginas/produtos.html" class="block text-navy hover:text-cyan font-medium">Produtos</a>
+ <a href="paginas/servicos.html" class="block text-navy hover:text-cyan font-medium">Serviços</a>
+ <a href="paginas/sobre.html" class="block text-navy hover:text-cyan font-medium">Sobre</a>
+ <a href="paginas/contacto.html" class="block text-navy hover:text-cyan font-medium">Contacto</a>
+ <a href="agendamento.html" class="block bg-cyan text-white px-4 py-2 rounded-full font-semibold text-center">Agendar</a>
+ <a href="admin/login.html" class="block text-navy/50 hover:text-cyan font-medium text-sm text-center mt-2"><i class="fa-solid fa-user-shield mr-1"></i> Admin</a>
+ </div>
+ </div>
+</nav>
+
+<main>
+<!-- Hero Section with Slideshow -->
+<section id="home" class="relative h-screen flex items-center justify-center overflow-hidden">
+    <!-- Slideshow Background -->
+    <div class="absolute inset-0 z-0">
+        <div class="slideshow-container w-full h-full" id="slideshow-container">
+            <!-- Slides loaded dynamically -->
+        </div>
+        <!-- Gradient overlay -->
+        <div class="absolute inset-0 bg-gradient-hero"></div>
+    </div>
+
+    <!-- Glassmorphism Content Card -->
+    <div class="relative z-10 text-center text-white px-4" data-aos="fade-up" data-aos-delay="200">
+        <div class="glass-dark rounded-3xl px-12 py-14 max-w-3xl mx-auto">
+            <h1 class="text-5xl md:text-7xl font-bold mb-4 tracking-tight" style="text-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                VIVA <span class="text-cyan">ÓPTICA</span>
+            </h1>
+            <p class="text-xl md:text-2xl font-light mb-10 text-gray-200 tracking-wide">
+                "O Futuro é Mais Nítido Aqui"
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="paginas/produtos.html?cat=armacao" class="btn-glow bg-cyan text-navy px-8 py-4 rounded-full font-bold text-lg hover:bg-white transition-all">
+                    Ver Coleções
+                </a>
+                <a href="agendamento.html" class="border-2 border-white/60 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white hover:text-navy transition-all glass">
+                    Agendar Exame
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Serviços em Destaque -->
+<section class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="text-center mb-14" data-aos="fade-up">
+            <span class="text-cyan font-semibold text-sm uppercase tracking-widest">O que fazemos</span>
+            <h2 class="text-3xl md:text-4xl font-bold text-navy mt-3 mb-4">Nossos Serviços</h2>
+            <div class="w-20 h-1 bg-gradient-to-r from-cyan to-magenta mx-auto rounded-full"></div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Serviço 1 -->
+            <div class="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border-t-4 border-cyan group" data-aos="fade-up">
+                <div class="w-14 h-14 bg-cyan/10 text-cyan rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform">
+                    <i class="fa-solid fa-eye"></i>
+                </div>
+                <h3 class="text-xl font-bold text-navy mb-3">Exame de Vista</h3>
+                <p class="text-gray-600 mb-6 leading-relaxed">Avaliações completas com tecnologia de ponta para determinar a sua graduação com precisão.</p>
+                <a href="agendamento.html" class="text-cyan font-bold hover:text-navy transition-colors inline-flex items-center gap-2">
+                    Agendar Agora <i class="fa-solid fa-arrow-right text-sm"></i>
+                </a>
+            </div>
+
+            <!-- Serviço 2 -->
+            <div class="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border-t-4 border-magenta group" data-aos="fade-up" data-aos-delay="100">
+                <div class="w-14 h-14 bg-magenta/10 text-magenta rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform">
+                    <i class="fa-solid fa-glasses"></i>
+                </div>
+                <h3 class="text-xl font-bold text-navy mb-3">Graduação de Lentes</h3>
+                <p class="text-gray-600 mb-6 leading-relaxed">Acompanhamento profissional para garantir que as suas lentes ou óculos sejam perfeitamente confortáveis.</p>
+                <a href="agendamento.html" class="text-magenta font-bold hover:text-navy transition-colors inline-flex items-center gap-2">
+                    Saber Mais <i class="fa-solid fa-arrow-right text-sm"></i>
+                </a>
+            </div>
+
+            <!-- Serviço 3 -->
+            <div class="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border-t-4 border-yellow group" data-aos="fade-up" data-aos-delay="200">
+                <div class="w-14 h-14 bg-yellow/10 text-yellow rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform">
+                    <i class="fa-solid fa-screwdriver-wrench"></i>
+                </div>
+                <h3 class="text-xl font-bold text-navy mb-3">Manutenção e Reparação</h3>
+                <p class="text-gray-600 mb-6 leading-relaxed">Ajustes, limpeza profunda e reparação de armações para que os seus óculos pareçam novos.</p>
+                <a href="paginas/contacto.html" class="text-yellow font-bold hover:text-navy transition-colors inline-flex items-center gap-2">
+                    Pedir Reparação <i class="fa-solid fa-arrow-right text-sm"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats / Counters -->
+<section class="py-20 bg-gradient-navy-cyan relative overflow-hidden">
+    <!-- Decorative shapes -->
+    <div class="absolute top-0 left-0 w-64 h-64 bg-white/5 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+    <div class="absolute bottom-0 right-0 w-96 h-96 bg-white/5 rounded-full translate-x-1/3 translate-y-1/3"></div>
+
+    <div class="max-w-7xl mx-auto px-4 relative z-10">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <!-- Stat 1 -->
+            <div class="glass rounded-2xl p-8 text-center text-white" data-aos="fade-up">
+                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl mx-auto mb-4">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <h3 class="text-4xl font-bold mb-2 counter-value" data-target="15000">0</h3>
+                <p class="text-gray-200 text-sm uppercase tracking-wider">Clientes Atendidos</p>
+            </div>
+
+            <!-- Stat 2 -->
+            <div class="glass rounded-2xl p-8 text-center text-white" data-aos="fade-up" data-aos-delay="100">
+                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl mx-auto mb-4">
+                    <i class="fa-solid fa-award"></i>
+                </div>
+                <h3 class="text-4xl font-bold mb-2"><span class="counter-value" data-target="50">0</span>+</h3>
+                <p class="text-gray-200 text-sm uppercase tracking-wider">Marcas Premium</p>
+            </div>
+
+            <!-- Stat 3 -->
+            <div class="glass rounded-2xl p-8 text-center text-white" data-aos="fade-up" data-aos-delay="200">
+                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl mx-auto mb-4">
+                    <i class="fa-solid fa-calendar-check"></i>
+                </div>
+                <h3 class="text-4xl font-bold mb-2"><span class="counter-value" data-target="10">0</span>+</h3>
+                <p class="text-gray-200 text-sm uppercase tracking-wider">Anos de Experiência</p>
+            </div>
+
+            <!-- Stat 4 -->
+            <div class="glass rounded-2xl p-8 text-center text-white" data-aos="fade-up" data-aos-delay="300">
+                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl mx-auto mb-4">
+                    <i class="fa-solid fa-heart"></i>
+                </div>
+                <h3 class="text-4xl font-bold mb-2"><span class="counter-value" data-target="100">0</span>%</h3>
+                <p class="text-gray-200 text-sm uppercase tracking-wider">Satisfação</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Logotipos de Marcas -->
+<section class="py-16 bg-white overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 mb-10" data-aos="fade-up">
+        <div class="text-center">
+            <span class="text-cyan font-semibold text-sm uppercase tracking-widest">Parceiros</span>
+            <h2 class="text-3xl md:text-4xl font-bold text-navy mt-3 mb-4">Marcas que Trabalhamos</h2>
+            <div class="w-20 h-1 bg-gradient-to-r from-cyan to-magenta mx-auto rounded-full"></div>
+        </div>
+    </div>
+
+    <!-- Marquee container -->
+    <div class="relative">
+        <!-- Fade edges -->
+        <div class="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-white to-transparent z-10"></div>
+        <div class="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-white to-transparent z-10"></div>
+
+        <div class="overflow-hidden">
+            <div class="marquee-track items-center gap-16 py-4 px-8">
+                <!-- First set -->
+                <div class="brand-logo flex-shrink-0 h-12 flex items-center">
+                    <span class="text-2xl font-bold text-gray-400 tracking-wider">RAY-BAN</span>
+                </div>
+                <div class="brand-logo flex-shrink-0 h-12 flex items-center">
+                    <span class="text-2xl font-bold text-gray-400 tracking-wider">OAKLEY</span>
+                </div>
+                <div class="brand-logo flex-shrink-0 h-12 flex items-center">
+                    <span class="text-2xl font-bold text-gray-400 tracking-wider">GUCCI</span>
+                </div>
+                <div class="brand-logo flex-shrink-0 h-12 flex items-center">
+                    <span class="text-2xl font-bold text-gray-400 tracking-wider">PRADA</span>
+                </div>
+                <div class="brand-logo flex-shrink-0 h-12 flex items-center">
+                    <span class="text-2xl font-bold text-gray-400 tracking-wider">VERSACE</span>
+                </div>
+                <div class="brand-logo flex-shrink-0 h-12 flex items-center">
+                    <span class="text-2xl font-bold text-gray-400 tracking-wider">TOM FORD</span>
+                </div>
+                <div class="brand-logo flex-shrink-0 h-12 flex items-center">
+                    <span class="text-2xl font-bold text-gray-400 tracking-wider">ARMAÇÕES</span>
+                </div>
+                <div class="brand-logo flex-shrink-0 h-12 flex items-center">
+                    <span class="text-2xl font-bold text-gray-400 tracking-wider">ESSILOR</span>
+                </div>
+
+                <!-- Duplicate set for seamless loop -->
+                <div class="brand-logo flex-shrink-0 h-12 flex items-center">
+                    <span class="text-2xl font-bold text-gray-400 tracking-wider">RAY-BAN</span>
+                </div>
+                <div class="brand-logo flex-shrink-0 h-12 flex items-center">
+                    <span class="text-2xl font-bold text-gray-400 tracking-wider">OAKLEY</span>
+                </div>
+                <div class="brand-logo flex-shrink-0 h-12 flex items-center">
+                    <span class="text-2xl font-bold text-gray-400 tracking-wider">GUCCI</span>
+                </div>
+                <div class="brand-logo flex-shrink-0 h-12 flex items-center">
+                    <span class="text-2xl font-bold text-gray-400 tracking-wider">PRADA</span>
+                </div>
+                <div class="brand-logo flex-shrink-0 h-12 flex items-center">
+                    <span class="text-2xl font-bold text-gray-400 tracking-wider">VERSACE</span>
+                </div>
+                <div class="brand-logo flex-shrink-0 h-12 flex items-center">
+                    <span class="text-2xl font-bold text-gray-400 tracking-wider">TOM FORD</span>
+                </div>
+                <div class="brand-logo flex-shrink-0 h-12 flex items-center">
+                    <span class="text-2xl font-bold text-gray-400 tracking-wider">ARMAÇÕES</span>
+                </div>
+                <div class="brand-logo flex-shrink-0 h-12 flex items-center">
+                    <span class="text-2xl font-bold text-gray-400 tracking-wider">ESSILOR</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testemunhos -->
+<section class="py-20 bg-gradient-soft">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="text-center mb-14" data-aos="fade-up">
+            <span class="text-cyan font-semibold text-sm uppercase tracking-widest">Depoimentos</span>
+            <h2 class="text-3xl md:text-4xl font-bold text-navy mt-3 mb-4">O que Dizem os Nossos Clientes</h2>
+            <div class="w-20 h-1 bg-gradient-to-r from-cyan to-magenta mx-auto rounded-full"></div>
+        </div>
+
+        <div id="testimonials-grid" class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Testimonials loaded dynamically or fallback -->
+        </div>
+    </div>
+</section>
+
+<!-- FAQ -->
+<section class="py-20 bg-white">
+    <div class="max-w-3xl mx-auto px-4">
+        <div class="text-center mb-14" data-aos="fade-up">
+            <span class="text-cyan font-semibold text-sm uppercase tracking-widest">Dúvidas</span>
+            <h2 class="text-3xl md:text-4xl font-bold text-navy mt-3 mb-4">Perguntas Frequentes</h2>
+            <div class="w-20 h-1 bg-gradient-to-r from-cyan to-magenta mx-auto rounded-full"></div>
+        </div>
+
+        <div id="faq-container" class="space-y-4" data-aos="fade-up">
+            <div class="faq-item border border-gray-200 rounded-2xl overflow-hidden">
+                <button class="faq-toggle w-full flex items-center justify-between p-6 text-left hover:bg-gray-50 transition-colors">
+                    <span class="font-bold text-navy text-lg pr-4">Como posso agendar um exame de vista?</span>
+                    <span class="faq-icon text-cyan text-2xl font-light flex-shrink-0">+</span>
+                </button>
+                <div class="faq-answer px-6">
+                    <p class="text-gray-600 pb-6 leading-relaxed">Pode agendar diretamente pelo nosso site na secção "Agendar", ligar para +244 954 145 065, ou enviar uma mensagem pelo WhatsApp. Respondemos em menos de 24 horas.</p>
+                </div>
+            </div>
+
+            <div class="faq-item border border-gray-200 rounded-2xl overflow-hidden">
+                <button class="faq-toggle w-full flex items-center justify-between p-6 text-left hover:bg-gray-50 transition-colors">
+                    <span class="font-bold text-navy text-lg pr-4">Quanto tempo demora a graduação de lentes?</span>
+                    <span class="faq-icon text-cyan text-2xl font-light flex-shrink-0">+</span>
+                </button>
+                <div class="faq-answer px-6">
+                    <p class="text-gray-600 pb-6 leading-relaxed">O exame completo dura aproximadamente 30-45 minutos. Os resultados são imediatos e a receita é entregue no final da consulta.</p>
+                </div>
+            </div>
+
+            <div class="faq-item border border-gray-200 rounded-2xl overflow-hidden">
+                <button class="faq-toggle w-full flex items-center justify-between p-6 text-left hover:bg-gray-50 transition-colors">
+                    <span class="font-bold text-navy text-lg pr-4">Trabalham com seguros de saúde?</span>
+                    <span class="faq-icon text-cyan text-2xl font-light flex-shrink-0">+</span>
+                </button>
+                <div class="faq-answer px-6">
+                    <p class="text-gray-600 pb-6 leading-relaxed">Sim, trabalhamos com os principais seguradores em Angola. Contacte-nos para verificar se o seu seguro é aceite.</p>
+                </div>
+            </div>
+
+            <div class="faq-item border border-gray-200 rounded-2xl overflow-hidden">
+                <button class="faq-toggle w-full flex items-center justify-between p-6 text-left hover:bg-gray-50 transition-colors">
+                    <span class="font-bold text-navy text-lg pr-4">Qual é o prazo de entrega das lentes?</span>
+                    <span class="faq-icon text-cyan text-2xl font-light flex-shrink-0">+</span>
+                </button>
+                <div class="faq-answer px-6">
+                    <p class="text-gray-600 pb-6 leading-relaxed">Lentes simples ficam prontas em 3-5 dias úteis. Lentes especiais ou progressivas podem levar 7-10 dias úteis.</p>
+                </div>
+            </div>
+
+            <div class="faq-item border border-gray-200 rounded-2xl overflow-hidden">
+                <button class="faq-toggle w-full flex items-center justify-between p-6 text-left hover:bg-gray-50 transition-colors">
+                    <span class="font-bold text-navy text-lg pr-4">Oferecem garantia nos produtos?</span>
+                    <span class="faq-icon text-cyan text-2xl font-light flex-shrink-0">+</span>
+                </button>
+                <div class="faq-answer px-6">
+                    <p class="text-gray-600 pb-6 leading-relaxed">Sim! Todas as armações têm garantia de 12 meses contra defeitos de fabrico. Lentes têm garantia de 6 meses.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Produtos em Destaque -->
+<section class="py-20 bg-gradient-soft">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="text-center mb-14" data-aos="fade-up">
+            <span class="text-cyan font-semibold text-sm uppercase tracking-widest">Novidades</span>
+            <h2 class="text-3xl md:text-4xl font-bold text-navy mt-3 mb-4">Produtos em Destaque</h2>
+            <div class="w-20 h-1 bg-gradient-to-r from-cyan to-magenta mx-auto rounded-full"></div>
+        </div>
+
+        <div id="featured-products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <!-- Loading skeletons -->
+            <div class="animate-pulse bg-gray-200 h-72 rounded-2xl"></div>
+            <div class="animate-pulse bg-gray-200 h-72 rounded-2xl"></div>
+            <div class="animate-pulse bg-gray-200 h-72 rounded-2xl"></div>
+            <div class="animate-pulse bg-gray-200 h-72 rounded-2xl"></div>
+        </div>
+
+        <div class="text-center mt-14">
+            <a href="paginas/produtos.html" class="inline-flex items-center gap-2 text-navy font-bold border-b-2 border-cyan hover:text-cyan transition-colors text-lg">
+                Ver todos os produtos <i class="fa-solid fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</section>
+</main>
+
+<!-- CTA WhatsApp -->
+<section class="py-20 bg-navy relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-br from-navy via-navy to-cyan/20"></div>
+    <div class="absolute top-0 right-0 w-96 h-96 bg-cyan/10 rounded-full translate-x-1/2 -translate-y-1/2"></div>
+    <div class="absolute bottom-0 left-0 w-64 h-64 bg-magenta/10 rounded-full -translate-x-1/2 translate-y-1/2"></div>
+
+    <div class="max-w-4xl mx-auto px-4 text-center relative z-10" data-aos="zoom-in">
+        <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Pronto para Melhorar a Sua Visão?</h2>
+        <p class="text-gray-300 text-lg mb-10 max-w-2xl mx-auto">Fale diretamente connosco via WhatsApp para marcar uma consulta, tirar dúvidas ou saber mais sobre os nossos serviços.</p>
+        <a href="https://wa.me/244954145065" target="_blank" class="inline-flex items-center gap-3 bg-green-500 hover:bg-green-600 text-white px-10 py-5 rounded-full font-bold text-lg transition-all shadow-lg hover:shadow-green-500/30 hover:-translate-y-1">
+            <i class="fa-brands fa-whatsapp text-2xl"></i> Contactar via WhatsApp
+        </a>
+    </div>
+</section>
+
+<!-- WhatsApp Floating Button -->
+<a href="https://wa.me/244954145065" target="_blank" class="fixed bottom-8 right-8 bg-green-500 text-white w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-2xl hover:scale-110 transition-transform z-50 animate-bounce">
+ <i class="fa-brands fa-whatsapp"></i>
+</a>
+
+<footer class="bg-navy text-white py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
+            <!-- Brand -->
+            <div class="md:col-span-1">
+                <h3 class="font-bold text-xl mb-4 text-cyan">Viva Óptica</h3>
+                <p class="text-gray-300 leading-relaxed mb-6">Sua visão é nossa prioridade. Mais de 10 anos a cuidar da saúde visual dos angolanos.</p>
+                <div class="flex gap-4">
+                    <a href="#" class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-gray-300 hover:bg-cyan hover:text-white transition-all">
+                        <i class="fa-brands fa-facebook-f"></i>
+                    </a>
+                    <a href="#" class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-gray-300 hover:bg-cyan hover:text-white transition-all">
+                        <i class="fa-brands fa-instagram"></i>
+                    </a>
+                    <a href="https://wa.me/244954145065" target="_blank" class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-gray-300 hover:bg-green-500 hover:text-white transition-all">
+                        <i class="fa-brands fa-whatsapp"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Links Rápidos -->
+            <div>
+                <h3 class="font-bold text-lg mb-4 text-cyan">Links Rápidos</h3>
+                <ul class="text-gray-300 space-y-3">
+                    <li><a href="index.html" class="hover:text-cyan transition-colors">Início</a></li>
+                    <li><a href="paginas/produtos.html" class="hover:text-cyan transition-colors">Produtos</a></li>
+                    <li><a href="paginas/servicos.html" class="hover:text-cyan transition-colors">Serviços</a></li>
+                    <li><a href="paginas/sobre.html" class="hover:text-cyan transition-colors">Sobre Nós</a></li>
+                </ul>
+            </div>
+
+            <!-- Serviços -->
+            <div>
+                <h3 class="font-bold text-lg mb-4 text-cyan">Serviços</h3>
+                <ul class="text-gray-300 space-y-3">
+                    <li><a href="agendamento.html" class="hover:text-cyan transition-colors">Exame de Vista</a></li>
+                    <li><a href="agendamento.html" class="hover:text-cyan transition-colors">Graduação de Lentes</a></li>
+                    <li><a href="paginas/contacto.html" class="hover:text-cyan transition-colors">Manutenção</a></li>
+                    <li><a href="paginas/contacto.html" class="hover:text-cyan transition-colors">Contacto</a></li>
+                </ul>
+            </div>
+
+            <!-- Contacto -->
+            <div>
+                <h3 class="font-bold text-lg mb-4 text-cyan">Contacte-nos</h3>
+                <div class="text-gray-300 space-y-3">
+                    <p class="flex items-start gap-3">
+                        <i class="fas fa-phone text-cyan mt-1"></i>
+                        <span>+244 954 145 065</span>
+                    </p>
+                    <p class="flex items-start gap-3">
+                        <i class="fas fa-envelope text-cyan mt-1"></i>
+                        <span>info@vivaoptica.ao</span>
+                    </p>
+                    <p class="flex items-start gap-3">
+                        <i class="fas fa-map-marker-alt text-cyan mt-1"></i>
+                        <span>Luanda, Angola</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="border-t border-gray-700 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p class="text-gray-400 text-sm">&copy; 2026 Viva Óptica. Todos os direitos reservados.</p>
+            <div class="flex gap-6 text-sm text-gray-500">
+                <a href="admin/login.html" class="hover:text-cyan transition-colors">Admin</a>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabaseClient.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

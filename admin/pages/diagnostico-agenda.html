@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico - Agenda</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="../supabaseClient.js"></script>
+    <link rel="stylesheet" href="../admin.css">
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .card { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #ccc; }
+        .card.success { border-left-color: green; }
+        .card.error { border-left-color: red; }
+        .card.warning { border-left-color: orange; }
+        .card.info { border-left-color: blue; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; background: #0066cc; color: white; border: none; border-radius: 4px; }
+        button:hover { background: #0052a3; }
+        pre { background: #f0f0f0; padding: 10px; overflow: auto; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Diagnóstico da Agenda - Viva Óptica</h1>
+    <p>Abra esta página em <code>http://localhost:8080/admin/pages/diagnostico-agenda.html</code></p>
+
+    <div>
+        <button onclick="test1()">1. Verificar SDK</button>
+        <button onclick="test2()">2. Verificar window.supabase</button>
+        <button onclick="test3()">3. Testar Auth</button>
+        <button onclick="test4()">4. Testar Tabela</button>
+        <button onclick="test5()">5. Verificar Elementos HTML</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        function addResult(title, message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `card ${type}`;
+            div.innerHTML = `<h3>${title}</h3><pre>${message}</pre>`;
+            document.getElementById('results').prepend(div);
+        }
+
+        async function test1() {
+            if (typeof supabase === 'undefined') {
+                addResult('❌ SDK não carregado', 'O SDK do Supabase não foi carregado. Verifique se o CDN está acessível.', 'error');
+                return;
+            }
+            addResult('✅ SDK Carregado', 'SDK do Supabase detectado com sucesso.', 'success');
+        }
+
+        async function test2() {
+            if (!window.supabase) {
+                addResult('❌ window.supabase não definido', 'O supabaseClient.js não criou window.supabase', 'error');
+                return;
+            }
+            if (typeof window.supabase.from !== 'function') {
+                addResult('❌ .from() não disponível', 'window.supabase.from não é uma função', 'error');
+                return;
+            }
+            addResult('✅ window.supabase OK', 'window.supabase está disponível e .from() funciona.', 'success');
+        }
+
+        async function test3() {
+            try {
+                const supabase = await window.getSupabase();
+                const { data: { session }, error } = await supabase.auth.getSession();
+                if (error) {
+                    addResult('❌ Erro Auth', error.message, 'error');
+                    return;
+                }
+                if (!session) {
+                    addResult('❌ Não logado', 'Usuário não está logado. Faça login primeiro em /admin/login.html', 'error');
+                    return;
+                }
+                addResult('✅ Autenticado', `Usuário: ${session.user.email}`, 'success');
+            } catch (e) {
+                addResult('❌ Erro', e.message, 'error');
+            }
+        }
+
+        async function test4() {
+            try {
+                const supabase = await window.getSupabase();
+                const { data, error, count } = await supabase
+                    .from('agendamentos')
+                    .select('*', { count: 'exact' })
+                    .limit(5);
+
+                if (error) {
+                    addResult('❌ Erro na Tabela', error.message, 'error');
+                    return;
+                }
+
+                addResult('✅ Tabela OK', `Registros: ${count || 0}\nDados: ${JSON.stringify(data, null, 2)}`, 'success');
+            } catch (e) {
+                addResult('❌ Erro', e.message, 'error');
+            }
+        }
+
+        function test5() {
+            const ids = ['stat-agendados', 'calendario-dias', 'consultas-dia', 'consultas-tabela'];
+            let msg = '';
+            let allOk = true;
+
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    msg += `✅ ${id} encontrado\n`;
+                } else {
+                    msg += `❌ ${id} NÃO encontrado\n`;
+                    allOk = false;
+                }
+            });
+
+            addResult(allOk ? '✅ Todos os elementos OK' : '❌ Faltam elementos', msg, allOk ? 'success' : 'error');
+        }
+
+        // Auto-teste ao carregar
+        window.addEventListener('load', () => {
+            addResult('ℹ️ Página carregada', 'Clique nos botões para testar cada componente', 'info');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Login - Viva Óptica</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <style>
+        .log-entry { font-family: 'Courier New', monospace; font-size: 12px; padding: 4px; margin: 2px 0; }
+        .log-success { background: #d1fae5; color: #065f46; }
+        .log-error { background: #fee2e2; color: #991b1b; }
+        .log-info { background: #dbeafe; color: #1e40af; }
+        .log-warning { background: #fef3c7; color: #92400e; }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">🔐 Teste de Diagnóstico - Login Admin</h1>
+
+        <!-- Status Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div id="card-supabase" class="bg-white p-4 rounded-lg shadow">
+                <div class="text-gray-600 text-sm">Supabase</div>
+                <div id="status-supabase" class="text-2xl font-bold">⏳</div>
+            </div>
+            <div id="card-connection" class="bg-white p-4 rounded-lg shadow">
+                <div class="text-gray-600 text-sm">Conexão</div>
+                <div id="status-connection" class="text-2xl font-bold">⏳</div>
+            </div>
+            <div id="card-tables" class="bg-white p-4 rounded-lg shadow">
+                <div class="text-gray-600 text-sm">Tabelas</div>
+                <div id="status-tables" class="text-2xl font-bold">⏳</div>
+            </div>
+            <div id="card-users" class="bg-white p-4 rounded-lg shadow">
+                <div class="text-gray-600 text-sm">Usuários</div>
+                <div id="status-users" class="text-2xl font-bold">⏳</div>
+            </div>
+        </div>
+
+        <!-- Test Form -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4">Testar Login</h2>
+            <div class="space-y-4">
+                <input type="email" id="test-email" placeholder="Email" class="w-full px-4 py-2 border rounded">
+                <input type="password" id="test-password" placeholder="Palavra-passe" class="w-full px-4 py-2 border rounded">
+                <button onclick="testLogin()" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+                    Testar Login
+                </button>
+            </div>
+        </div>
+
+        <!-- Manual User Creation -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4 text-orange-600">⚠️ Criar Usuário Admin (Se Necessário)</h2>
+            <p class="text-sm text-gray-600 mb-4">Use apenas se não houver usuários admin no sistema.</p>
+            <div class="space-y-4">
+                <input type="email" id="new-email" placeholder="Email do admin" class="w-full px-4 py-2 border rounded">
+                <input type="password" id="new-password" placeholder="Palavra-passe" class="w-full px-4 py-2 border rounded">
+                <button onclick="createAdminUser()" class="w-full bg-orange-600 text-white py-2 rounded hover:bg-orange-700">
+                    Criar Usuário Admin
+                </button>
+            </div>
+        </div>
+
+        <!-- Logs -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-bold mb-4">📋 Logs de Diagnóstico</h2>
+            <div id="logs" class="bg-gray-900 text-white p-4 rounded-lg h-96 overflow-y-auto font-mono text-sm"></div>
+            <button onclick="document.getElementById('logs').innerHTML = ''" class="mt-4 px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-800">
+                Limpar Logs
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabaseClient.js"></script>
+    <script>
+        let supabase = null;
+        const logs = document.getElementById('logs');
+
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const classes = {
+                success: 'log-success',
+                error: 'log-error',
+                warning: 'log-warning',
+                info: 'log-info'
+            };
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${classes[type]}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logs.appendChild(logEntry);
+            logs.scrollTop = logs.scrollHeight;
+            console.log(message);
+        }
+
+        async function initialize() {
+            addLog('🔧 Inicializando diagnóstico...', 'info');
+
+            // Update connection status
+            document.getElementById('status-connection').textContent = navigator.onLine ? '✅' : '❌';
+            document.getElementById('status-connection').parentElement.className = navigator.onLine
+                ? 'bg-green-100 p-4 rounded-lg shadow'
+                : 'bg-red-100 p-4 rounded-lg shadow';
+
+            try {
+                // Wait for Supabase
+                addLog('⏳ Aguardando Supabase...', 'info');
+                supabase = await window.getSupabase();
+
+                if (!supabase) {
+                    addLog('❌ Supabase não disponível!', 'error');
+                    document.getElementById('status-supabase').textContent = '❌';
+                    document.getElementById('status-supabase').parentElement.className = 'bg-red-100 p-4 rounded-lg shadow';
+                    return;
+                }
+
+                addLog('✅ Supabase inicializado com sucesso!', 'success');
+                document.getElementById('status-supabase').textContent = '✅';
+                document.getElementById('status-supabase').parentElement.className = 'bg-green-100 p-4 rounded-lg shadow';
+
+                // Test connection
+                addLog('🔍 Testando conexão...', 'info');
+                const { data, error } = await supabase.from('configuracoes_loja').select('*').limit(1);
+
+                if (error) {
+                    addLog(`❌ Erro de conexão: ${error.message}`, 'error');
+                    document.getElementById('status-connection').textContent = '❌';
+                    document.getElementById('status-connection').parentElement.className = 'bg-red-100 p-4 rounded-lg shadow';
+                } else {
+                    addLog('✅ Conexão estabelecida!', 'success');
+                    document.getElementById('status-connection').textContent = '✅';
+                    document.getElementById('status-connection').parentElement.className = 'bg-green-100 p-4 rounded-lg shadow';
+                }
+
+                // Check tables
+                addLog('🔍 Verificando tabelas...', 'info');
+                const tables = ['profiles', 'produtos', 'clientes', 'agendamentos', 'slideshow'];
+                let tablesOk = 0;
+
+                for (const table of tables) {
+                    try {
+                        const { data, error } = await supabase.from(table).select('count', { count: 'exact', head: true });
+                        if (error) {
+                            addLog(`❌ Tabela ${table}: ${error.message}`, 'error');
+                        } else {
+                            addLog(`✅ Tabela ${table} existe`, 'success');
+                            tablesOk++;
+                        }
+                    } catch (err) {
+                        addLog(`❌ Tabela ${table}: ${err.message}`, 'error');
+                    }
+                }
+
+                document.getElementById('status-tables').textContent = `${tablesOk}/${tables.length}`;
+                document.getElementById('status-tables').parentElement.className = tablesOk === tables.length
+                    ? 'bg-green-100 p-4 rounded-lg shadow'
+                    : 'bg-yellow-100 p-4 rounded-lg shadow';
+
+                // Check users
+                addLog('🔍 Verificando usuários...', 'info');
+                const { data: users, error: usersError } = await supabase
+                    .from('profiles')
+                    .select('id, role, email, nome')
+                    .limit(10);
+
+                if (usersError) {
+                    addLog(`❌ Erro ao buscar usuários: ${usersError.message}`, 'error');
+                    document.getElementById('status-users').textContent = '❌';
+                } else {
+                    const adminCount = users.filter(u => ['admin', 'superadmin'].includes(u.role)).length;
+                    addLog(`✅ Encontrados ${users.length} perfis (${adminCount} admins)`, 'success');
+                    if (users.length > 0) {
+                        addLog(`   Usuários: ${users.map(u => `${u.email} (${u.role})`).join(', ')}`, 'info');
+                    }
+                    document.getElementById('status-users').textContent = adminCount > 0 ? '✅' : '⚠️';
+                    document.getElementById('status-users').parentElement.className = adminCount > 0
+                        ? 'bg-green-100 p-4 rounded-lg shadow'
+                        : 'bg-yellow-100 p-4 rounded-lg shadow';
+                }
+
+            } catch (err) {
+                addLog(`❌ Erro fatal: ${err.message}`, 'error');
+                console.error(err);
+            }
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('test-email').value;
+            const password = document.getElementById('test-password').value;
+
+            if (!email || !password) {
+                addLog('❌ Preencha email e palavra-passe!', 'error');
+                return;
+            }
+
+            addLog(`🔐 Testando login: ${email}`, 'info');
+
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password
+                });
+
+                if (error) {
+                    addLog(`❌ Erro de login: ${error.message}`, 'error');
+                    return;
+                }
+
+                addLog(`✅ Login bem-sucedido! User: ${data.user.email}`, 'success');
+
+                // Check profile
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', data.user.id)
+                    .single();
+
+                if (profileError) {
+                    addLog(`❌ Erro ao buscar perfil: ${profileError.message}`, 'error');
+                    return;
+                }
+
+                addLog(`✅ Perfil: ${profile.role}`, 'success');
+
+                if (!['admin', 'superadmin'].includes(profile.role)) {
+                    addLog('❌ Role não permitida! Apenas admin ou superadmin.', 'error');
+                    return;
+                }
+
+                addLog('✅ Usuário tem permissão para acessar o painel!', 'success');
+
+            } catch (err) {
+                addLog(`❌ Erro: ${err.message}`, 'error');
+            }
+        }
+
+        async function createAdminUser() {
+            const email = document.getElementById('new-email').value;
+            const password = document.getElementById('new-password').value;
+
+            if (!email || !password) {
+                addLog('❌ Preencha email e palavra-passe!', 'error');
+                return;
+            }
+
+            if (password.length < 6) {
+                addLog('❌ Palavra-passe deve ter pelo menos 6 caracteres!', 'error');
+                return;
+            }
+
+            addLog(`👤 Criando usuário admin: ${email}`, 'warning');
+
+            try {
+                // Create auth user
+                const { data: authData, error: authError } = await supabase.auth.signUp({
+                    email,
+                    password
+                });
+
+                if (authError) {
+                    addLog(`❌ Erro ao criar usuário: ${authError.message}`, 'error');
+                    return;
+                }
+
+                addLog(`✅ Usuário criado no Auth! ID: ${authData.user.id}`, 'success');
+
+                // Create profile
+                const { error: profileError } = await supabase.from('profiles').insert({
+                    id: authData.user.id,
+                    email: email,
+                    role: 'admin',
+                    nome: 'Admin'
+                });
+
+                if (profileError) {
+                    addLog(`❌ Erro ao criar perfil: ${profileError.message}`, 'error');
+                    return;
+                }
+
+                addLog('✅ Perfil admin criado com sucesso!', 'success');
+                addLog('⚠️ Verifique seu email para confirmação (se necessário)', 'warning');
+
+            } catch (err) {
+                addLog(`❌ Erro: ${err.message}`, 'error');
+            }
+        }
+
+        // Initialize on load
+        initialize();
+    </script>
+</body>
+</html>

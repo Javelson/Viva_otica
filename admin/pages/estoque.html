@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estoque Inteligente | Admin - Viva Óptica</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../admin.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: '#0D1B2E',
+                        cyan: '#00aadc',
+                        magenta: '#e91e8c',
+                        yellow: '#f5c800',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-64 admin-sidebar text-white flex-shrink-0 hidden md:flex flex-col">
+            <div class="p-6 border-b border-white/10 text-center">
+                <img src="../Logo/viva_logo_branco.jpeg" alt="Viva Óptica Logo" class="h-12 mx-auto mb-3 bg-white rounded-lg p-2">
+                <p class="text-xs text-gray-400">Painel Admin</p>
+            </div>
+            <nav class="flex-1 overflow-y-auto py-4">
+                <a href="index.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                    <i class="fa-solid fa-chart-line w-6"></i>
+                    <span class="ml-3">Dashboard</span>
+                </a>
+                <a href="slideshow.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                    <i class="fa-solid fa-images w-6"></i>
+                    <span class="ml-3">Slideshow</span>
+                </a>
+                <a href="produtos.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                    <i class="fa-solid fa-box w-6"></i>
+                    <span class="ml-3">Produtos</span>
+                </a>
+                <a href="prontuario.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                    <i class="fa-solid fa-file-medical w-6"></i>
+                    <span class="ml-3">Prontuário</span>
+                </a>
+                <a href="laboratorio.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                    <i class="fa-solid fa-industry w-6"></i>
+                    <span class="ml-3">Laboratório</span>
+                </a>
+                <a href="estoque.html" class="flex items-center px-6 py-3 text-sm bg-cyan/20 border-r-3 border-cyan transition-colors">
+                    <i class="fa-solid fa-warehouse w-6"></i>
+                    <span class="ml-3">Estoque</span>
+                </a>
+                <a href="configuracoes.html" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                    <i class="fa-solid fa-cog w-6"></i>
+                    <span class="ml-3">Configurações</span>
+                </a>
+                <a href="#" onclick="logout()" class="flex items-center px-6 py-3 text-sm hover:bg-white/5 transition-colors">
+                    <i class="fa-solid fa-sign-out-alt w-6"></i>
+                    <span class="ml-3">Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <header class="bg-white shadow-sm border-b admin-header">
+                <div class="px-6 py-4 flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-navy">Estoque Inteligente</h1>
+                        <p class="text-sm text-gray-500 mt-1">Controle completo de produtos, alertas e relatórios</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <button onclick="openModal('fornecedor')" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center text-sm">
+                            <i class="fa-solid fa-truck mr-2"></i>
+                            Fornecedor
+                        </button>
+                        <button onclick="openModal('produto')" class="admin-btn-primary px-6 py-2 rounded-lg font-medium transition-colors flex items-center">
+                            <i class="fa-solid fa-plus mr-2"></i>
+                            Novo Produto
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Stats -->
+            <div class="bg-white border-b">
+                <div class="px-6 py-4 grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div class="text-center p-3 bg-blue-50 rounded-lg">
+                        <div class="text-2xl font-bold text-blue-600" id="stat-total">0</div>
+                        <div class="text-xs text-gray-600">Total Produtos</div>
+                    </div>
+                    <div class="text-center p-3 bg-red-50 rounded-lg cursor-pointer hover:bg-red-100" onclick="filterByAlert('critical')">
+                        <div class="text-2xl font-bold text-red-600" id="stat-critico">0</div>
+                        <div class="text-xs text-gray-600">Esgotados</div>
+                    </div>
+                    <div class="text-center p-3 bg-orange-50 rounded-lg cursor-pointer hover:bg-orange-100" onclick="filterByAlert('low')">
+                        <div class="text-2xl font-bold text-orange-600" id="stat-baixo">0</div>
+                        <div class="text-xs text-gray-600">Estoque Baixo</div>
+                    </div>
+                    <div class="text-center p-3 bg-green-50 rounded-lg">
+                        <div class="text-2xl font-bold text-green-600" id="stat-normal">0</div>
+                        <div class="text-xs text-gray-600">Estoque OK</div>
+                    </div>
+                    <div class="text-center p-3 bg-purple-50 rounded-lg">
+                        <div class="text-2xl font-bold text-purple-600" id="stat-valor">0</div>
+                        <div class="text-xs text-gray-600">Valor (M)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="bg-white border-b">
+                <div class="px-6 flex gap-4">
+                    <button onclick="switchTab('produtos')" id="tab-produtos" class="py-3 px-4 border-b-2 border-cyan text-cyan font-medium">
+                        <i class="fa-solid fa-box mr-2"></i>Produtos
+                    </button>
+                    <button onclick="switchTab('alertas')" id="tab-alertas" class="py-3 px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                        <i class="fa-solid fa-bell mr-2"></i>Alertas
+                        <span id="alert-badge" class="ml-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full hidden">0</span>
+                    </button>
+                    <button onclick="switchTab('movimentacoes')" id="tab-movimentacoes" class="py-3 px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                        <i class="fa-solid fa-arrows-rotate mr-2"></i>Movimentações
+                    </button>
+                    <button onclick="switchTab('fornecedores')" id="tab-fornecedores" class="py-3 px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                        <i class="fa-solid fa-truck mr-2"></i>Fornecedores
+                    </button>
+                    <button onclick="switchTab('relatorios')" id="tab-relatorios" class="py-3 px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                        <i class="fa-solid fa-chart-bar mr-2"></i>Relatórios
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <main class="flex-1 overflow-y-auto p-6">
+                <!-- Produtos Tab -->
+                <div id="content-produtos" class="tab-content">
+                    <!-- Filters -->
+                    <div class="admin-card p-4 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
+                                <input type="text" id="search" placeholder="Nome, SKU, marca..."
+                                    class="w-full px-4 py-2 admin-input">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
+                                <select id="filter-category"
+                                    class="w-full px-4 py-2 admin-input">
+                                    <option value="">Todas</option>
+                                    <option value="armacao">Armações</option>
+                                    <option value="lente">Lentes</option>
+                                    <option value="acessorio">Acessórios</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Marca</label>
+                                <select id="filter-brand"
+                                    class="w-full px-4 py-2 admin-input">
+                                    <option value="">Todas</option>
+                                    <!-- Carregado dinamicamente -->
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                                <select id="filter-status"
+                                    class="w-full px-4 py-2 admin-input">
+                                    <option value="">Todos</option>
+                                    <option value="ok">Estoque OK</option>
+                                    <option value="baixo">Estoque Baixo</option>
+                                    <option value="critico">Esgotado</option>
+                                </select>
+                            </div>
+                            <div class="flex items-end">
+                                <button onclick="loadEstoque()"
+                                    class="w-full bg-navy hover:bg-navyLight text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                    <i class="fa-solid fa-search mr-2"></i>
+                                    Buscar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Loading -->
+                    <div id="loading" class="hidden flex items-center justify-center h-64">
+                        <div class="animate-spin rounded-full h-12 w-12 border-4 border-cyan border-t-transparent"></div>
+                    </div>
+
+                    <!-- Products Grid -->
+                    <div id="products-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Produtos serão renderizados aqui -->
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="empty-state" class="hidden text-center py-12">
+                        <i class="fa-solid fa-box-open text-6xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-500 text-lg">Nenhum produto encontrado.</p>
+                        <button onclick="openModal('produto')" class="mt-4 text-cyan hover:text-cyanLight font-medium">
+                            Criar o primeiro produto
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Alertas Tab -->
+                <div id="content-alertas" class="tab-content hidden">
+                    <div id="alerts-list" class="space-y-4">
+                        <!-- Alertas serão renderizados aqui -->
+                    </div>
+                </div>
+
+                <!-- Movimentações Tab -->
+                <div id="content-movimentacoes" class="tab-content hidden">
+                    <div id="movimentacoes-list" class="space-y-4">
+                        <!-- Movimentações serão renderizadas aqui -->
+                    </div>
+                </div>
+
+                <!-- Fornecedores Tab -->
+                <div id="content-fornecedores" class="tab-content hidden">
+                    <div id="fornecedores-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Fornecedores serão renderizados aqui -->
+                    </div>
+                </div>
+
+                <!-- Relatórios Tab -->
+                <div id="content-relatorios" class="tab-content hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Top Produtos -->
+                        <div class="admin-card p-6">
+                            <h3 class="text-lg font-bold text-navy mb-4">
+                                <i class="fa-solid fa-trophy text-yellow-500 mr-2"></i>
+                                Top 10 Mais Vendidos
+                            </h3>
+                            <div id="top-products-list">
+                                <!-- Carregado dinamicamente -->
+                            </div>
+                        </div>
+
+                        <!-- Resumo por Categoria -->
+                        <div class="admin-card p-6">
+                            <h3 class="text-lg font-bold text-navy mb-4">
+                                <i class="fa-solid fa-chart-pie text-cyan mr-2"></i>
+                                Resumo por Categoria
+                            </h3>
+                            <div id="category-summary">
+                                <!-- Carregado dinamicamente -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal de Produto -->
+    <div id="produto-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl my-8 overflow-y-auto max-h-[90vh]">
+            <div class="flex items-center justify-between p-6 border-b bg-navy text-white">
+                <h2 class="text-2xl font-bold"><i class="fa-solid fa-box mr-2"></i>Novo Produto</h2>
+                <button onclick="closeModal('produto')" class="text-gray-300 hover:text-white">
+                    <i class="fa-solid fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="produto-form" class="p-6">
+                <input type="hidden" id="produto-id">
+
+                <!-- Informações Básicas -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">SKU *</label>
+                        <input type="text" id="sku" required class="w-full px-4 py-2 admin-input">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Código de Barras</label>
+                        <input type="text" id="codigo_barras" class="w-full px-4 py-2 admin-input">
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome do Produto *</label>
+                    <input type="text" id="nome_produto" required class="w-full px-4 py-2 admin-input">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Categoria *</label>
+                        <select id="categoria" required class="w-full px-4 py-2 admin-input">
+                            <option value="">Selecione...</option>
+                            <option value="armacao">Armação</option>
+                            <option value="lente">Lente</option>
+                            <option value="acessorio">Acessório</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Subcategoria</label>
+                        <input type="text" id="subcategoria" placeholder="Ex: Metal, Plástico..." class="w-full px-4 py-2 admin-input">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Marca</label>
+                        <input type="text" id="marca" class="w-full px-4 py-2 admin-input">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Modelo</label>
+                        <input type="text" id="modelo" class="w-full px-4 py-2 admin-input">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Cor</label>
+                        <input type="text" id="cor" class="w-full px-4 py-2 admin-input">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tamanho</label>
+                        <input type="text" id="tamanho" placeholder="Ex: 54-18-140" class="w-full px-4 py-2 admin-input">
+                    </div>
+                </div>
+
+                <!-- Controles de Estoque -->
+                <div class="bg-blue-50 rounded-lg p-4 mb-6 border border-cyan/20">
+                    <h3 class="text-lg font-bold text-navy mb-4">
+                        <i class="fa-solid fa-warehouse mr-2 text-cyan"></i>
+                        Controle de Estoque
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Quantidade Atual *</label>
+                            <input type="number" id="quantidade_atual" value="0" min="0" required class="w-full px-4 py-2 admin-input">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Estoque Mínimo *</label>
+                            <input type="number" id="estoque_minimo" value="5" min="0" required class="w-full px-4 py-2 admin-input">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Estoque Máximo</label>
+                            <input type="number" id="estoque_maximo" value="100" min="0" class="w-full px-4 py-2 admin-input">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Localização</label>
+                            <input type="text" id="localizacao_almoxarifado" placeholder="Prateleira A-12" class="w-full px-4 py-2 admin-input">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Valores -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Custo Unitário (Kz)</label>
+                        <input type="number" step="0.01" id="custo_unitario" placeholder="0.00" class="w-full px-4 py-2 admin-input">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Preço de Venda (Kz)</label>
+                        <input type="number" step="0.01" id="preco_venda" placeholder="0.00" class="w-full px-4 py-2 admin-input">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Margem (%)</label>
+                        <input type="text" id="margem_lucro" readonly class="w-full admin-input bg-gray-100" placeholder="0.00%">
+                    </div>
+                </div>
+
+                <!-- Status -->
+                <div class="flex items-center gap-6 mb-6">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" id="ativo" checked class="w-4 h-4 text-cyan border-gray-300 rounded focus:ring-cyan">
+                        <span class="ml-2 text-sm text-gray-700">Ativo</span>
+                    </label>
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" id="disponivel_venda" checked class="w-4 h-4 text-cyan border-gray-300 rounded focus:ring-cyan">
+                        <span class="ml-2 text-sm text-gray-700">Disponível para Venda</span>
+                    </label>
+                </div>
+
+                <div class="flex justify-end space-x-4 pt-4 border-t">
+                    <button type="button" onclick="closeModal('produto')" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-6 py-2 admin-btn-primary rounded-lg font-medium">
+                        <i class="fa-solid fa-save mr-2"></i>Salvar Produto
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Movimentação -->
+    <div id="movimentacao-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6">
+            <h3 class="text-xl font-bold text-navy mb-4">
+                <i class="fa-solid fa-arrows-rotate mr-2 text-cyan"></i>
+                Registrar Movimentação
+            </h3>
+            <input type="hidden" id="movimentacao-estoque-id">
+            <input type="hidden" id="movimentacao-produto-nome">
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Produto</label>
+                <input type="text" id="movimentacao-produto-display" readonly class="w-full admin-input bg-gray-100">
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Movimentação *</label>
+                <select id="movimentacao-tipo" required class="w-full px-4 py-2 admin-input">
+                    <option value="entrada">Entrada (Compra/Devolução)</option>
+                    <option value="saida">Saída (Venda/Perda)</option>
+                    <option value="ajuste">Ajuste de Estoque</option>
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Quantidade *</label>
+                <input type="number" id="movimentacao-quantidade" min="1" required class="w-full px-4 py-2 admin-input">
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Motivo</label>
+                <input type="text" id="movimentacao-motivo" placeholder="Ex: Compra, Venda #123, Ajuste..." class="w-full px-4 py-2 admin-input">
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Observações</label>
+                <textarea id="movimentacao-observacoes" rows="3" class="w-full px-4 py-2 admin-input"></textarea>
+            </div>
+
+            <div class="flex justify-end space-x-4">
+                <button type="button" onclick="document.getElementById('movimentacao-modal').classList.add('hidden')" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                    Cancelar
+                </button>
+                <button type="button" onclick="confirmMovimentacao()" class="px-6 py-2 admin-btn-primary rounded-lg font-medium">
+                    <i class="fa-solid fa-check mr-2"></i>Registrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed bottom-8 left-8 z-50"></div>
+
+    <script src="../supabaseClient.js"></script>
+    <script src="js/estoque.js"></script>
+</body>
+</html>

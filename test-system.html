@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste do Sistema - Viva Óptica</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <style>
+        .status-pass { color: #10b981; }
+        .status-fail { color: #ef4444; }
+        .status-warn { color: #f59e0b; }
+        .test-card { transition: all 0.3s ease; }
+        .test-card:hover { transform: translateX(5px); }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="max-w-6xl mx-auto p-8">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h1 class="text-3xl font-bold text-navy mb-2">🔍 Teste do Sistema - Viva Óptica</h1>
+            <p class="text-gray-600">Diagnóstico completo de todos os módulos ERP</p>
+            <div class="mt-4 flex gap-3">
+                <button onclick="runAllTests()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold">
+                    🚀 Executar Todos os Testes
+                </button>
+                <button onclick="location.href='admin/index.html'" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg">
+                    📊 Ir para Admin Panel
+                </button>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div id="summary" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="text-3xl font-bold text-gray-300" id="total-tests">0</div>
+                <div class="text-sm text-gray-600">Total de Testes</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="text-3xl font-bold text-green-500" id="passed-tests">0</div>
+                <div class="text-sm text-gray-600">Aprovados</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="text-3xl font-bold text-red-500" id="failed-tests">0</div>
+                <div class="text-sm text-gray-600">Falharam</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="text-3xl font-bold text-yellow-500" id="warning-tests">0</div>
+                <div class="text-sm text-gray-600">Avisos</div>
+            </div>
+        </div>
+
+        <!-- Test Results -->
+        <div id="results" class="space-y-4">
+            <!-- Modules will be populated dynamically -->
+        </div>
+
+        <!-- Console Log -->
+        <div class="bg-gray-900 text-green-400 rounded-lg shadow p-4 mt-6 font-mono text-sm max-h-96 overflow-y-auto" id="console-log">
+            <div class="text-gray-500">// Logs do sistema aparecerão aqui...</div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Configuração
+        const SUPABASE_URL = 'https://ppvdqrhhcmeqssazgpnd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwdmRxcmhoY21lcXNzYXpncG5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyOTI1NzksImV4cCI6MjA5Mjg2ODU3OX0.UJhzd1SxSSz_NO9XMBDSjAljxTNXygI59ezPwZv3wRw';
+
+        let supabase;
+        let testResults = {
+            passed: 0,
+            failed: 0,
+            warnings: 0,
+            total: 0,
+            modules: {}
+        };
+
+        // Logging
+        function log(message, type = 'info') {
+            const consoleLog = document.getElementById('console-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                info: 'text-blue-400',
+                success: 'text-green-400',
+                warning: 'text-yellow-400',
+                error: 'text-red-400'
+            };
+            consoleLog.innerHTML += `<div class="${colors[type]}">[${timestamp}] ${message}</div>`;
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+        }
+
+        // Inicializar Supabase
+        async function initSupabase() {
+            try {
+                log('Inicializando conexão com Supabase...', 'info');
+                supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+                const { data, error } = await supabase.from('profiles').select('count', { head: true });
+
+                if (error) throw error;
+
+                log('✅ Conexão com Supabase estabelecida!', 'success');
+                return true;
+            } catch (error) {
+                log(`❌ Erro de conexão: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Testar tabela
+        async function testTable(tableName, columns = []) {
+            testResults.total++;
+            try {
+                const { data, error } = await supabase
+                    .from(tableName)
+                    .select('*')
+                    .limit(1);
+
+                if (error) {
+                    testResults.failed++;
+                    log(`❌ Tabela ${tableName}: ${error.message}`, 'error');
+                    return { status: 'fail', table: tableName, error: error.message };
+                }
+
+                // Verificar colunas
+                const columnIssues = [];
+                if (columns.length > 0 && data.length > 0) {
+                    const firstRow = data[0];
+                    columns.forEach(col => {
+                        if (!(col in firstRow)) {
+                            columnIssues.push(col);
+                        }
+                    });
+                }
+
+                if (columnIssues.length > 0) {
+                    testResults.warnings++;
+                    log(`⚠️ Tabela ${tableName}: colunas faltantes ${columnIssues.join(', ')}`, 'warning');
+                    return { status: 'warning', table: tableName, missingColumns: columnIssues };
+                }
+
+                testResults.passed++;
+                log(`✅ Tabela ${tableName}: OK (${data.length} registros)`, 'success');
+                return { status: 'pass', table: tableName, count: data.length };
+            } catch (error) {
+                testResults.failed++;
+                log(`❌ Tabela ${tableName}: ${error.message}`, 'error');
+                return { status: 'fail', table: tableName, error: error.message };
+            }
+        }
+
+        // Testar funções do banco
+        async function testFunction(functionName, description) {
+            testResults.total++;
+            try {
+                const { data, error } = await supabase.rpc(functionName);
+
+                if (error) {
+                    testResults.warnings++;
+                    log(`⚠️ Função ${functionName}: ${error.message}`, 'warning');
+                    return { status: 'warning', function: functionName, error: error.message };
+                }
+
+                testResults.passed++;
+                log(`✅ Função ${functionName}: OK`, 'success');
+                return { status: 'pass', function: functionName };
+            } catch (error) {
+                testResults.warnings++;
+                log(`⚠️ Função ${functionName}: Não encontrada ou erro`, 'warning');
+                return { status: 'warning', function: functionName, error: error.message };
+            }
+        }
+
+        // Testar arquivos
+        function testFile(filePath, description) {
+            testResults.total++;
+            fetch(filePath)
+                .then(response => {
+                    if (response.ok) {
+                        testResults.passed++;
+                        log(`✅ Arquivo ${filePath}: OK`, 'success');
+                        updateModuleResult('files', { status: 'pass', file: filePath });
+                    } else {
+                        testResults.failed++;
+                        log(`❌ Arquivo ${filePath}: ${response.status} ${response.statusText}`, 'error');
+                        updateModuleResult('files', { status: 'fail', file: filePath });
+                    }
+                })
+                .catch(error => {
+                    testResults.failed++;
+                    log(`❌ Arquivo ${filePath}: ${error.message}`, 'error');
+                    updateModuleResult('files', { status: 'fail', file: filePath, error: error.message });
+                });
+        }
+
+        // Atualizar resultados por módulo
+        function updateModuleResult(module, result) {
+            if (!testResults.modules[module]) {
+                testResults.modules[module] = [];
+            }
+            testResults.modules[module].push(result);
+            renderResults();
+        }
+
+        // Renderizar resultados
+        function renderResults() {
+            document.getElementById('total-tests').textContent = testResults.total;
+            document.getElementById('passed-tests').textContent = testResults.passed;
+            document.getElementById('failed-tests').textContent = testResults.failed;
+            document.getElementById('warning-tests').textContent = testResults.warnings;
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+
+            // Módulos de teste
+            const modules = {
+                'database': { title: '🗄️ Banco de Dados', tests: [] },
+                'authentication': { title: '🔐 Autenticação', tests: [] },
+                'files': { title: '📁 Arquivos', tests: [] },
+                'api': { title: '🔌 APIs & Funções', tests: [] }
+            };
+
+            // Agrupar resultados
+            Object.entries(testResults.modules).forEach(([module, results]) => {
+                if (modules[module]) {
+                    modules[module].tests = results;
+                }
+            });
+
+            // Renderizar módulos
+            Object.entries(modules).forEach(([key, module]) => {
+                if (module.tests.length > 0) {
+                    const moduleDiv = document.createElement('div');
+                    moduleDiv.className = 'bg-white rounded-lg shadow p-6';
+
+                    let html = `<h2 class="text-xl font-bold text-navy mb-4">${module.title}</h2>`;
+                    html += '<div class="space-y-2">';
+
+                    module.tests.forEach(test => {
+                        const statusClass = test.status === 'pass' ? 'status-pass' :
+                                          test.status === 'fail' ? 'status-fail' : 'status-warn';
+                        const icon = test.status === 'pass' ? '✅' :
+                                   test.status === 'fail' ? '❌' : '⚠️';
+
+                        let testHtml = `<div class="test-card flex items-center justify-between p-3 bg-gray-50 rounded">`;
+                        testHtml += `<span class="${statusClass} font-semibold">${icon} ${test.table || test.function || test.file || ''}</span>`;
+
+                        if (test.error) {
+                            testHtml += `<span class="text-sm text-red-500">${test.error}</span>`;
+                        } else if (test.count !== undefined) {
+                            testHtml += `<span class="text-sm text-gray-600">${test.count} registros</span>`;
+                        }
+
+                        testHtml += '</div>';
+                        html += testHtml;
+                    });
+
+                    html += '</div>';
+                    moduleDiv.innerHTML = html;
+                    resultsDiv.appendChild(moduleDiv);
+                }
+            });
+        }
+
+        // Executar todos os testes
+        async function runAllTests() {
+            log('🚀 Iniciando testes do sistema...', 'info');
+
+            // Resetar resultados
+            testResults = { passed: 0, failed: 0, warnings: 0, total: 0, modules: {} };
+            document.getElementById('console-log').innerHTML = '';
+
+            // Inicializar Supabase
+            const connected = await initSupabase();
+            if (!connected) {
+                log('❌ Não é possível continuar sem conexão com o Supabase', 'error');
+                return;
+            }
+
+            // Testar tabelas principais
+            log('\n📊 Testando tabelas do banco de dados...', 'info');
+
+            const tables = [
+                { name: 'produtos', columns: ['nome', 'preco', 'categoria', 'estoque'] },
+                { name: 'clientes', columns: ['nome', 'telefone', 'email'] },
+                { name: 'agendamentos', columns: ['cliente_nome', 'cliente_telefone', 'servico', 'data_agendamento', 'hora_agendamento'] },
+                { name: 'slideshow_images', columns: ['image_url', 'titulo', 'ordem'] },
+                { name: 'profiles', columns: ['email', 'role', 'created_at'] }
+            ];
+
+            for (const table of tables) {
+                const result = await testTable(table.name, table.columns);
+                updateModuleResult('database', result);
+            }
+
+            // Testar autenticação
+            log('\n🔐 Testando autenticação...', 'info');
+            testResults.total++;
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                if (error) {
+                    testResults.warnings++;
+                    log(`⚠️ Autenticação: ${error.message}`, 'warning');
+                    updateModuleResult('authentication', { status: 'warning', info: 'Usuário não logado (normal para teste)' });
+                } else {
+                    testResults.passed++;
+                    log(`✅ Autenticação: Usuário ${user.email}`, 'success');
+                    updateModuleResult('authentication', { status: 'pass', info: `Usuário: ${user.email}` });
+                }
+            } catch (error) {
+                testResults.warnings++;
+                log(`⚠️ Autenticação: ${error.message}`, 'warning');
+                updateModuleResult('authentication', { status: 'warning', info: 'Sistema de autenticação disponível' });
+            }
+
+            // Testar arquivos
+            log('\n📁 Testando arquivos do sistema...', 'info');
+            const files = [
+                'admin/index.html',
+                'admin/app.js',
+                'admin/login.html',
+                'index.html',
+                'js/supabaseClient.js'
+            ];
+
+            files.forEach(file => testFile(file, 'Arquivo do sistema'));
+
+            // Testar funções do banco
+            log('\n🔌 Testando funções do banco...', 'info');
+            const functions = [
+                'atualizar_estoque'
+            ];
+
+            for (const func of functions) {
+                const result = await testFunction(func);
+                updateModuleResult('api', result);
+            }
+
+            // Finalizar
+            log('\n✅ Testes concluídos!', 'success');
+            log(`📊 Resumo: ${testResults.passed} aprovados, ${testResults.failed} falharam, ${testResults.warnings} avisos`, 'info');
+        }
+
+        // Carregar automaticamente ao abrir
+        window.addEventListener('load', () => {
+            log('Página carregada. Clique em "Executar Todos os Testes" para começar.', 'info');
+        });
+    </script>
+</body>
+</html>
