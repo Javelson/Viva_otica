@@ -1,7 +1,69 @@
 // ============================================
 // AGENDAMENTO HANDLER - Viva Óptica
-// Versão: 2.0 - Com Logs Detalhados e Debug
+// Versão: 3.0 - Pós-agendamento com redirect WhatsApp
 // ============================================
+
+// ============================================
+// CONFIGURAÇÃO CENTRALIZADA
+// ============================================
+const WHATSAPP_CONFIG = {
+    phone: '244954145065',
+    get waMeUrl() { return `https://wa.me/${this.phone}`; },
+    get webUrl() { return `https://web.whatsapp.com/send?phone=${this.phone}`; }
+};
+
+const REDIRECT_DELAY_MS = 2000;
+
+// ============================================
+// DETECÇÃO DE DISPOSITIVO
+// ============================================
+function isMobileDevice() {
+    const ua = navigator.userAgent || '';
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)
+        || (navigator.maxTouchPoints > 0 && /Mobile/i.test(ua));
+}
+
+// ============================================
+// VALIDAÇÃO DE URL
+// ============================================
+function buildWhatsAppUrl(phone, message, mobile) {
+    const encodedMsg = encodeURIComponent(message);
+    const base = mobile ? WHATSAPP_CONFIG.waMeUrl : WHATSAPP_CONFIG.webUrl;
+    const separator = mobile ? '?' : '&';
+    const url = `${base}${separator}text=${encodedMsg}`;
+
+    // Validar que o URL é seguro (apenas domínios WhatsApp)
+    try {
+        const parsed = new URL(url);
+        const allowedHosts = ['wa.me', 'web.whatsapp.com', 'api.whatsapp.com'];
+        if (!allowedHosts.includes(parsed.hostname)) {
+            console.error('❌ [AGENDAMENTO] URL inválido detectado:', parsed.hostname);
+            return null;
+        }
+        return url;
+    } catch {
+        console.error('❌ [AGENDAMENTO] URL malformado');
+        return null;
+    }
+}
+
+// ============================================
+// CONSTRUIR MENSAGEM WHATSAPP
+// ============================================
+function buildWhatsAppMessage(dados) {
+    return [
+        '*NOVO AGENDAMENTO - Viva Óptica*',
+        '',
+        `*Nome:* ${dados.nome}`,
+        `*Email:* ${dados.email}`,
+        `*Telefone:* ${dados.telefone}`,
+        `*Nascimento:* ${dados.nascimento}`,
+        `*Tipo:* ${dados.tipo_consulta}`,
+        `*Data:* ${dados.data}`,
+        `*Hora:* ${dados.hora}`,
+        `*Observações:* ${dados.observacoes || 'Nenhuma'}`
+    ].join('\n');
+}
 
 document.addEventListener('DOMContentLoaded', function() {
 console.log('✅ [AGENDAMENTO] DOM carregado - Inicializando...');
@@ -76,24 +138,6 @@ submitBtn.innerHTML = '<i class="fa-brands fa-whatsapp mr-2"></i>Confirmar Agend
 return;
 }
 
-// Preparar objeto para inserção (CHAVES EXATAS DA TABELA)
-const dadosParaInsercao = {
-nome: dados.nome,
-nome_cliente: dados.nome, // Alias para compatibilidade com admin
-email: dados.email,
-telefone: dados.telefone,
-telefone_cliente: dados.telefone, // Alias para compatibilidade com admin
-nascimento: dados.nascimento,
-tipo: dados.tipo_consulta,
-servico: dados.tipo_consulta, // Alias para compatibilidade com admin
-data: dados.data,
-hora: dados.hora,
-observacoes: dados.observacoes || null,
-status: 'pendente'
-};
-
-console.log('📦 [AGENDAMENTO] Objeto para inserção:', dadosParaInsercao);
-
 // UI Feedback
 submitBtn.disabled = true;
 submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch animate-spin mr-2"></i>A processar...';
@@ -102,7 +146,7 @@ feedback.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100'
 try {
 console.log('🔄 [AGENDAMENTO] A conectar ao Supabase...');
 
-// 1. Guardar no Supabase - APENAS colunas que existem na tabela agendamentos
+// 1. Guardar no Supabase - aguardar confirmação antes de prosseguir
 const { data, error } = await window.supabase
 .from('agendamentos')
 .insert([{
@@ -145,26 +189,56 @@ throw new Error(errorMessage);
 console.log('✅ [AGENDAMENTO] Agendamento guardado com sucesso!');
 console.log('✅ [AGENDAMENTO] ID criado:', data?.[0]?.id);
 
-// 2. Criar Mensagem WhatsApp
-const mensagem = `*NOVO AGENDAMENTO - Viva Óptica*%0A%0A*Nome:* ${dados.nome}%0A*Email:* ${dados.email}%0A*Telefone:* ${dados.telefone}%0A*Nascimento:* ${dados.nascimento}%0A*Tipo:* ${dados.tipo_consulta}%0A*Data:* ${dados.data}%0A*Hora:* ${dados.hora}%0A*Observações:* ${dados.observacoes || 'Nenhuma'}`;
-
-// 3. Feedback de Sucesso
-feedback.textContent = '✅ Agendamento enviado com sucesso! Vamos abrir o WhatsApp para confirmar.';
+// 2. Notificação de sucesso clara
+feedback.textContent = '✅ Agendamento feito com sucesso! A redirecionar para o WhatsApp...';
 feedback.className = 'mt-4 p-4 bg-green-100 text-green-700 rounded-lg';
 feedback.classList.remove('hidden');
 
-console.log('🎉 [AGENDAMENTO] Sucesso! Redirecionando para WhatsApp...');
+// Atualizar passo visual para "3 - Confirmação"
+const step3 = document.querySelector('.flex.items-center:last-child .w-10');
+if (step3) {
+step3.classList.remove('bg-gray-300', 'text-gray-600');
+step3.classList.add('bg-cyan', 'text-white');
+}
 
-// 4. Redirecionar para WhatsApp
+// 3. Redirecionamento após delay (2 segundos)
+const mensagem = buildWhatsAppMessage(dados);
+const mobile = isMobileDevice();
+
+console.log('📱 [AGENDAMENTO] Dispositivo detectado:', mobile ? 'Mobile' : 'Desktop');
+
 setTimeout(() => {
-window.open(`https://wa.me/244954145065?text=${mensagem}`, '_blank');
-form.reset();
-submitBtn.disabled = false;
-submitBtn.innerHTML = '<i class="fa-brands fa-whatsapp mr-2"></i>Confirmar Agendamento';
-console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-console.log('✅ [AGENDAMENTO] Processo concluído!');
-console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-}, 1500);
+const url = buildWhatsAppUrl(WHATSAPP_CONFIG.phone, mensagem, mobile);
+
+if (!url) {
+    console.error('❌ [AGENDAMENTO] Falha ao construir URL do WhatsApp');
+    feedback.textContent = '✅ Agendamento feito com sucesso! Contacte-nos pelo WhatsApp: +244 954 145 065';
+    feedback.className = 'mt-4 p-4 bg-green-100 text-green-700 rounded-lg';
+    form.reset();
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = '<i class="fa-brands fa-whatsapp mr-2"></i>Confirmar Agendamento';
+    return;
+}
+
+console.log('🔗 [AGENDAMENTO] URL de redirecionamento:', url);
+console.log('📱 [AGENDAMENTO] Tipo:', mobile ? 'wa.me (app nativo)' : 'WhatsApp Web');
+
+// Mobile: location.href abre o app nativo (wa.me)
+// Desktop: nova aba no WhatsApp Web (mantém o utilizador no site)
+if (mobile) {
+    window.location.href = url;
+} else {
+    window.open(url, '_blank');
+}
+
+// Reset form após redirect (caso o utilizador volte)
+setTimeout(() => {
+    form.reset();
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = '<i class="fa-brands fa-whatsapp mr-2"></i>Confirmar Agendamento';
+    feedback.classList.add('hidden');
+}, 500);
+}, REDIRECT_DELAY_MS);
 
 } catch (err) {
 console.error('💥 [AGENDAMENTO] ERRO CRÍTICO:', err);
