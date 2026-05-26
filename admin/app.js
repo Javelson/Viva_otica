@@ -1358,23 +1358,6 @@ async function renderClientes(clientesList = []) {
       `}
     </div>
   `;
-                  <td>${c.email || '-'}</td>
-                  <td class="text-right">
-                    <button onclick="globalThis.editClient('${c.id}')" class="text-cyan hover:text-navy mr-3 transition-colors p-1.5 hover:bg-cyan/10 rounded-lg">
-                      <i class="fa-solid fa-edit"></i>
-                    </button>
-                    <button onclick="globalThis.deleteClient('${c.id}')" class="text-red-400 hover:text-red-600 transition-colors p-1.5 hover:bg-red-50 rounded-lg">
-                      <i class="fa-solid fa-trash"></i>
-                    </button>
-                  </td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      `}
-    </div>
-  `;
 
   // Adicionar evento ao botão de novo cliente
   const btnNovoCliente = main.querySelector('#btn-novo-cliente');
