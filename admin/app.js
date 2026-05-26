@@ -229,6 +229,7 @@ async function showAddAppointmentModal() {
             class="admin-input">
             <option value="pendente">Pendente</option>
             <option value="confirmado">Confirmado</option>
+            <option value="feito">Feito</option>
             <option value="concluido">Concluído</option>
             <option value="cancelado">Cancelado</option>
           </select>
@@ -463,6 +464,7 @@ async function editAppointment(appointmentId) {
               class="admin-input">
               <option value="pendente" ${data.status === 'pendente' ? 'selected' : ''}>Pendente</option>
               <option value="confirmado" ${data.status === 'confirmado' ? 'selected' : ''}>Confirmado</option>
+              <option value="feito" ${data.status === 'feito' ? 'selected' : ''}>Feito</option>
               <option value="concluido" ${data.status === 'concluido' ? 'selected' : ''}>Concluído</option>
               <option value="cancelado" ${data.status === 'cancelado' ? 'selected' : ''}>Cancelado</option>
             </select>
@@ -516,6 +518,31 @@ async function deleteAppointment(appointmentId) {
   } catch (error) {
     console.error('Erro ao excluir agendamento:', error);
     showToast('Erro ao excluir agendamento', 'error');
+  }
+}
+
+async function handleUpdateStatus(appointmentId) {
+  try {
+    const { data, error } = await globalThis.supabase
+      .from('agendamentos')
+      .update({ status: 'feito' })
+      .eq('id', appointmentId)
+      .select();
+
+    if (error) throw error;
+
+    showToast('Agendamento marcado como Feito!', 'success');
+    await loadAgendamentos();
+    renderAgendamentos();
+  } catch (error) {
+    console.error('Erro ao atualizar status:', error);
+    if (error.code === '42501' || error.message?.includes('policy')) {
+      showToast('Erro de permissão (RLS): não autorizado a alterar este agendamento.', 'error');
+    } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+      showToast('Erro de conexão: verifique sua internet e tente novamente.', 'error');
+    } else {
+      showToast('Erro ao atualizar status: ' + (error.message || 'Erro desconhecido'), 'error');
+    }
   }
 }
 
@@ -591,11 +618,20 @@ function renderAgendamentos() {
         <td>${formatDateTime(a.data, a.data_hora)}</td>
         <td>${a.servico || a.servico_principal || 'Consultação'}</td>
         <td>
-          <span class="admin-badge ${a.status === 'confirmado' ? 'admin-badge-success' : a.status === 'pendente' ? 'admin-badge-warning' : a.status === 'concluido' ? 'admin-badge-info' : 'admin-badge-neutral'}">
+          <span class="admin-badge ${a.status === 'confirmado' ? 'admin-badge-success' : a.status === 'pendente' ? 'admin-badge-warning' : a.status === 'concluido' || a.status === 'feito' ? 'admin-badge-info' : 'admin-badge-neutral'}">
             ${a.status || 'pendente'}
           </span>
         </td>
         <td>
+          ${a.status === 'pendente' ? `
+            <button onclick="handleUpdateStatus('${a.id}')" class="text-green-500 hover:text-green-700 mr-3 transition-colors p-1.5 hover:bg-green-50 rounded-lg" title="Marcar como Feito">
+              <i class="fa-solid fa-check"></i>
+            </button>
+          ` : a.status === 'feito' ? `
+            <span class="text-green-600 mr-3 p-1.5 inline-flex items-center" title="Concluído">
+              <i class="fa-solid fa-circle-check"></i>
+            </span>
+          ` : ''}
           <button onclick="editAppointment('${a.id}')" class="text-cyan hover:text-navy mr-3 transition-colors p-1.5 hover:bg-cyan/10 rounded-lg">
             <i class="fa-solid fa-edit"></i>
           </button>
