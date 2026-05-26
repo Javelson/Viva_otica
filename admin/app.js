@@ -415,7 +415,7 @@ async function editAppointment(appointmentId) {
 
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Telefone *</label>
-            <input type="tel" id="cliente_telefone" name="cliente_telefone" value="${data.telefone_cliente || ''}" required
+            <input type="tel" id="cliente_telefone" name="cliente_telefone" value="${data.cliente_telefone || ''}" required
               class="admin-input">
           </div>
 
@@ -434,7 +434,7 @@ async function editAppointment(appointmentId) {
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Hora *</label>
-              <input type="time" id="data_hora_time" name="data_hora_time" value="${data.data ? new Date(data.data).toTimeString().split(' ')[0].substring(0,5) : ''}" required
+              <input type="time" id="data_hora_time" name="data_hora_time" value="${data.hora ? data.hora.substring(0,5) : ''}" required
                 class="admin-input">
             </div>
           </div>
@@ -554,7 +554,8 @@ async function loadAgendamentos() {
     const { data, error } = await globalThis.supabase
       .from('agendamentos')
       .select('*')
-      .order('data', { ascending: false });
+      .order('data', { ascending: false })
+      .order('hora', { ascending: false });
 
     if (error) throw error;
     agendamentos = data || [];
@@ -641,24 +642,27 @@ function renderAgendamentos() {
 
   const tbody = main.querySelector('#agendamentos-table-body');
   if (tbody) {
-    // Função para formatar data/hora
-    const formatDateTime = (data, data_hora) => {
-      if (data) {
-        return new Date(data).toLocaleString('pt-PT');
-      }
-      if (data_hora) {
-        return new Date(data_hora).toLocaleString('pt-PT');
-      }
-      return 'N/A';
+    // Função para formatar data e hora
+    const formatDate = (data) => {
+      if (!data) return '';
+      const d = new Date(data + 'T00:00:00');
+      return d.toLocaleDateString('pt-PT');
     };
-    
+    const formatHora = (hora) => {
+      if (!hora) return '';
+      return hora.substring(0, 5);
+    };
+
     tbody.innerHTML = agendamentos.map(a => `
       <tr data-cliente="${(a.cliente_nome || '').toLowerCase()}" data-servico="${(a.servico || a.servico_principal || '').toLowerCase()}" data-status="${(a.status || '').toLowerCase()}">
         <td>
           <div class="font-semibold text-gray-900">${a.cliente_nome || 'N/A'}</div>
           <div class="text-xs text-gray-400 mt-0.5">${a.cliente_telefone || ''}</div>
         </td>
-        <td>${formatDateTime(a.data, a.data_hora)}</td>
+        <td>
+          <div class="font-medium text-gray-800">${formatDate(a.data)}</div>
+          <div class="text-xs text-gray-500 mt-0.5">${a.hora ? 'às ' + formatHora(a.hora) : ''}</div>
+        </td>
         <td>${a.servico || a.servico_principal || 'Consultação'}</td>
         <td>
           <span class="admin-badge ${a.status === 'confirmado' ? 'admin-badge-success' : a.status === 'pendente' ? 'admin-badge-warning' : a.status === 'concluido' || a.status === 'feito' ? 'admin-badge-info' : 'admin-badge-neutral'}">
