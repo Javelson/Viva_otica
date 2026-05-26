@@ -110,7 +110,8 @@
       "Bash(bash \"C:\\\\Users\\\\IP4U\\\\.openclaude\\\\plugins\\\\cache\\\\claude-plugins-official\\\\superpowers\\\\5.0.7\\\\skills\\\\brainstorming\\\\scripts\\\\start-server.sh\" --project-dir \"C:\\\\Users\\\\IP4U\\\\OneDrive\\\\Javelson Canzenze Doc\\\\Viva Otica\\\\viva-optica\\\\viva-optica\")",
       "mcp__plugin_supabase_supabase__list_projects",
       "Bash(mkdir -p \"C:\\\\Users\\\\IP4U\\\\OneDrive\\\\Javelson Canzenze Doc\\\\Viva Otica\\\\viva-optica\\\\viva-optica\\\\admin\\\\js\\\\libs\")",
-      "Bash(cp \"C:\\\\Users\\\\IP4U\\\\OneDrive\\\\Javelson Canzenze Doc\\\\Viva Otica\\\\viva-optica\\\\viva-optica\\\\admin\\\\pages\\\\js\\\\libs\\\\supabase.min.js\" \"C:\\\\Users\\\\IP4U\\\\OneDrive\\\\Javelson Canzenze Doc\\\\Viva Otica\\\\viva-optica\\\\viva-optica\\\\admin\\\\js\\\\libs\\\\supabase.min.js\")"
+      "Bash(cp \"C:\\\\Users\\\\IP4U\\\\OneDrive\\\\Javelson Canzenze Doc\\\\Viva Otica\\\\viva-optica\\\\viva-optica\\\\admin\\\\pages\\\\js\\\\libs\\\\supabase.min.js\" \"C:\\\\Users\\\\IP4U\\\\OneDrive\\\\Javelson Canzenze Doc\\\\Viva Otica\\\\viva-optica\\\\viva-optica\\\\admin\\\\js\\\\libs\\\\supabase.min.js\")",
+      "WebFetch(domain:vivaoptica.vercel.app)"
     ]
   }
 }
