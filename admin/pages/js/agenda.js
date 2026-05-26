@@ -3,6 +3,12 @@
 
 console.log('🚀 agenda.js v5.0 carregado');
 
+function logout() {
+  if (confirm('Tem certeza que deseja sair?')) {
+    window.location.href = '../../index.html';
+  }
+}
+
 // Teste básico
 document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ DOM carregado');

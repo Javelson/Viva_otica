@@ -83,7 +83,7 @@ function setupNavigation() {
     logoutBtn.addEventListener('click', async () => {
       if (confirm('Tem certeza que deseja terminar sessão?')) {
         await globalThis.supabase.auth.signOut();
-        globalThis.location.href = 'login.html';
+        globalThis.location.href = '../index.html';
       }
     });
   }
