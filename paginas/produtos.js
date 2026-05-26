@@ -159,10 +159,12 @@
             <div class="product-card bg-white rounded-lg shadow-md overflow-hidden border border-gray-200" data-id="${produto.id}">
                 <!-- Imagem -->
                 <div class="relative overflow-hidden bg-gray-100 h-64">
-                    <img 
-                        src="${imagem}" 
-                        alt="${produto.nome}" 
+                    <img
+                        src="${imagem}"
+                        alt="${produto.nome}"
                         class="product-image"
+                        loading="lazy"
+                        decoding="async"
                         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22400%22 height=%22300%22/%3E%3Ctext fill=%22%23999%22 x=%2250%%22 y=%2250%%22 text-anchor=%22middle%22 dy=%22.3em%22%3ESem imagem%3C/text%3E%3C/svg%3E'"
                     >
                     <!-- Badge de Estoque -->
