@@ -564,6 +564,32 @@ async function loadAgendamentos() {
   }
 }
 
+function filtrarAgendamentos() {
+  const input = document.getElementById('agendamentos-search');
+  if (!input) return;
+
+  const termo = input.value.trim().toLowerCase();
+  const tbody = document.getElementById('agendamentos-table-body');
+  const emptyMsg = document.getElementById('agendamentos-empty-search');
+  if (!tbody) return;
+
+  const rows = tbody.querySelectorAll('tr');
+  let visiveis = 0;
+
+  rows.forEach(row => {
+    const cliente = row.dataset.cliente || '';
+    const servico = row.dataset.servico || '';
+    const status = row.dataset.status || '';
+    const match = cliente.includes(termo) || servico.includes(termo) || status.includes(termo);
+    row.style.display = match ? '' : 'none';
+    if (match) visiveis++;
+  });
+
+  if (emptyMsg) {
+    emptyMsg.classList.toggle('hidden', visiveis > 0);
+  }
+}
+
 function renderAgendamentos() {
   const main = document.getElementById('main-content');
   if (!main) return;
@@ -576,6 +602,19 @@ function renderAgendamentos() {
           <i class="fa-solid fa-plus"></i>Novo Agendamento
         </button>
       </div>
+
+      ${agendamentos.length === 0 ? '' : `
+        <div class="mb-5">
+          <div class="relative max-w-md">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <i class="fa-solid fa-magnifying-glass text-gray-400 text-sm"></i>
+            </div>
+            <input type="text" id="agendamentos-search" placeholder="Buscar por cliente, serviço ou status..."
+              class="w-full pl-11 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan/40 focus:border-cyan shadow-sm transition-all"
+              oninput="filtrarAgendamentos()">
+          </div>
+        </div>
+      `}
 
       <div class="admin-table-container">
         <table>
@@ -592,6 +631,10 @@ function renderAgendamentos() {
             ${agendamentos.length === 0 ? '<tr><td colspan="5" class="px-6 py-12 text-center text-gray-400">Nenhum agendamento encontrado</td></tr>' : ''}
           </tbody>
         </table>
+        <div id="agendamentos-empty-search" class="hidden py-10 text-center">
+          <i class="fa-solid fa-search text-2xl text-gray-300 mb-2"></i>
+          <p class="text-sm text-gray-400">Nenhum agendamento encontrado</p>
+        </div>
       </div>
     </div>
   `;
@@ -610,7 +653,7 @@ function renderAgendamentos() {
     };
     
     tbody.innerHTML = agendamentos.map(a => `
-      <tr>
+      <tr data-cliente="${(a.cliente_nome || '').toLowerCase()}" data-servico="${(a.servico || a.servico_principal || '').toLowerCase()}" data-status="${(a.status || '').toLowerCase()}">
         <td>
           <div class="font-semibold text-gray-900">${a.cliente_nome || 'N/A'}</div>
           <div class="text-xs text-gray-400 mt-0.5">${a.cliente_telefone || ''}</div>
