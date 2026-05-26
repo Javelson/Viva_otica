@@ -1255,6 +1255,32 @@ async function deleteClient(id) {
   }
 }
 
+// Filtrar clientes por nome ou email em tempo real
+function filtrarClientes() {
+  const input = document.getElementById('clientes-search');
+  if (!input) return;
+
+  const termo = input.value.trim().toLowerCase();
+  const tbody = document.getElementById('clientes-tbody');
+  const emptyMsg = document.getElementById('clientes-empty-search');
+  if (!tbody) return;
+
+  const rows = tbody.querySelectorAll('tr');
+  let visiveis = 0;
+
+  rows.forEach(row => {
+    const nome = row.dataset.nome || '';
+    const email = row.dataset.email || '';
+    const match = nome.includes(termo) || email.includes(termo);
+    row.style.display = match ? '' : 'none';
+    if (match) visiveis++;
+  });
+
+  if (emptyMsg) {
+    emptyMsg.classList.toggle('hidden', visiveis > 0);
+  }
+}
+
 // Renderizar clientes na UI do admin
 async function renderClientes(clientesList = []) {
   if (clientesList.length === 0) {
@@ -1284,6 +1310,18 @@ async function renderClientes(clientesList = []) {
           </div>
         </div>
       ` : `
+        <!-- Campo de busca -->
+        <div class="mb-5">
+          <div class="relative max-w-md">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <i class="fa-solid fa-magnifying-glass text-gray-400 text-sm"></i>
+            </div>
+            <input type="text" id="clientes-search" placeholder="Buscar por nome ou email..."
+              class="w-full pl-11 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan/40 focus:border-cyan shadow-sm transition-all"
+              oninput="filtrarClientes()">
+          </div>
+        </div>
+
         <div class="admin-table-container">
           <table>
             <thead>
@@ -1294,11 +1332,32 @@ async function renderClientes(clientesList = []) {
                 <th class="text-right">Ações</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="clientes-tbody">
               ${clientesList.map(c => `
-                <tr>
+                <tr data-nome="${(c.nome || '').toLowerCase()}" data-email="${(c.email || '').toLowerCase()}">
                   <td class="font-semibold text-gray-900">${c.nome || 'N/A'}</td>
                   <td>${c.telefone || '-'}</td>
+                  <td>${c.email || '-'}</td>
+                  <td class="text-right">
+                    <button onclick="globalThis.editClient('${c.id}')" class="text-cyan hover:text-navy mr-3 transition-colors p-1.5 hover:bg-cyan/10 rounded-lg">
+                      <i class="fa-solid fa-edit"></i>
+                    </button>
+                    <button onclick="globalThis.deleteClient('${c.id}')" class="text-red-400 hover:text-red-600 transition-colors p-1.5 hover:bg-red-50 rounded-lg">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <div id="clientes-empty-search" class="hidden py-10 text-center">
+            <i class="fa-solid fa-search text-2xl text-gray-300 mb-2"></i>
+            <p class="text-sm text-gray-400">Nenhum cliente encontrado</p>
+          </div>
+        </div>
+      `}
+    </div>
+  `;
                   <td>${c.email || '-'}</td>
                   <td class="text-right">
                     <button onclick="globalThis.editClient('${c.id}')" class="text-cyan hover:text-navy mr-3 transition-colors p-1.5 hover:bg-cyan/10 rounded-lg">
