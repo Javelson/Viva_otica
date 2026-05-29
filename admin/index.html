@@ -3,7 +3,7 @@
 <head>
  <meta charset="UTF-8">
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.tailwindcss.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; connect-src 'self' https://cdn.jsdelivr.net https://ppvdqrhhcmeqssazgpnd.supabase.co wss://ppvdqrhhcmeqssazgpnd.supabase.co; frame-src 'none';">
+ <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.tailwindcss.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; connect-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://ppvdqrhhcmeqssazgpnd.supabase.co wss://ppvdqrhhcmeqssazgpnd.supabase.co; frame-src 'none';">
  <title>Painel Admin | Viva Óptica</title>
  <!-- Tailwind CDN (para desenvolvimento) - Para produção, usar build local: npm install tailwindcss -->
  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
@@ -16,6 +16,9 @@
  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
  <!-- Chart.js for stats -->
  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+ <!-- jsPDF for PDF generation -->
+ <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+ <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
  <!-- FontAwesome -->
  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
  <!-- Admin Premium CSS -->
@@ -57,6 +60,10 @@
   <i class="fa-solid fa-calendar-check w-6"></i>
   <span class="ml-3 font-medium">Agendamentos</span>
  </a>
+ <a href="#" data-section="consultas" class="sidebar-item flex items-center px-6 py-3 text-sm transition-colors">
+  <i class="fa-solid fa-stethoscope w-6"></i>
+  <span class="ml-3 font-medium">Consultas</span>
+ </a>
  <a href="#" data-section="produtos" class="sidebar-item flex items-center px-6 py-3 text-sm transition-colors">
   <i class="fa-solid fa-box w-6"></i>
   <span class="ml-3 font-medium">Produtos</span>
@@ -64,10 +71,6 @@
  <a href="#" data-section="clientes" class="sidebar-item flex items-center px-6 py-3 text-sm transition-colors">
   <i class="fa-solid fa-users w-6"></i>
   <span class="ml-3 font-medium">Clientes</span>
- </a>
- <a href="#" data-section="configuracoes" class="sidebar-item flex items-center px-6 py-3 text-sm transition-colors">
-  <i class="fa-solid fa-cog w-6"></i>
-  <span class="ml-3 font-medium">Configurações</span>
  </a>
  <a href="#" data-section="slideshow" class="sidebar-item flex items-center px-6 py-3 text-sm transition-colors">
   <i class="fa-solid fa-images w-6"></i>

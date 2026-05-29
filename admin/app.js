@@ -9,6 +9,8 @@ let slides = []; // Array principal de slides
 let currentSlide = null; // Para edição
 let currentSlideImage = null; // Arquivo de imagem selecionado
 let isUploadingSlide = false; // Estado de upload
+let consultas = []; // Array principal de consultas
+let currentConsulta = null; // Para edição
 
 
 // ============================================
@@ -110,8 +112,8 @@ function navigateToSection(section) {
     acessorios: 'Acessórios',
     paginas: 'Páginas',
     agendamentos: 'Agendamentos',
-    clientes: 'Clientes',
-    configuracoes: 'Configurações'
+    consultas: 'Consultas',
+    clientes: 'Clientes'
   };
   document.getElementById('page-title').textContent = titles[section] || 'Dashboard';
 
@@ -124,8 +126,8 @@ function navigateToSection(section) {
     acessorios: () => loadProductsFromSupabase().then(products => renderProdutosUI(products.filter(p => p.categoria === 'acessorio'))),
     paginas: renderPaginas,
     agendamentos: renderAgendamentos,
-    clientes: renderClientes,
-    configuracoes: renderConfiguracoes
+    consultas: renderConsultas,
+    clientes: renderClientes
   };
 
   if (renderFunctions[section]) {
@@ -296,6 +298,21 @@ async function saveAppointment() {
     showToast('Por favor, preencha todos os campos obrigatórios*', 'error');
     console.error('[SAVE] Campos obrigatórios faltando');
     return;
+  }
+
+  // Verificar duplicados (mesmo cliente + mesma data, ignorando edições)
+  if (!currentEditingAppointment?.id) {
+    const { data: existing } = await globalThis.supabase
+      .from('agendamentos')
+      .select('id')
+      .eq('cliente_nome', cliente_nome)
+      .eq('data', data_hora_date)
+      .limit(1);
+
+    if (existing && existing.length > 0) {
+      showToast('Já existe um agendamento para este cliente nesta data', 'error');
+      return;
+    }
   }
 
   // Combine date and time - Corrigir formato de data
@@ -523,12 +540,14 @@ async function deleteAppointment(appointmentId) {
 
 async function handleUpdateStatus(appointmentId) {
   try {
+    console.log('🔍 [DEBUG] Atualizando agendamento:', appointmentId);
     const { data, error } = await globalThis.supabase
       .from('agendamentos')
       .update({ status: 'feito' })
       .eq('id', appointmentId)
       .select();
 
+    console.log('🔍 [DEBUG] Resultado update agendamento:', { data, error });
     if (error) throw error;
 
     showToast('Agendamento marcado como Feito!', 'success');
@@ -1220,6 +1239,21 @@ async function saveClient() {
   if (!nome || !telefone) {
     showToast('Preencha o nome e telefone obrigatórios*', 'error');
     return;
+  }
+
+  // Verificar duplicados (mesmo nome + mesmo telefone, ignorando edições)
+  if (!currentCliente?.id) {
+    const { data: existing } = await globalThis.supabase
+      .from('clientes')
+      .select('id')
+      .eq('nome', nome)
+      .eq('telefone', telefone)
+      .limit(1);
+
+    if (existing && existing.length > 0) {
+      showToast('Já existe um cliente com este nome e telefone', 'error');
+      return;
+    }
   }
 
   submitBtn.disabled = true;
@@ -2517,6 +2551,868 @@ function formatPrice(value) {
   }).format(value || 0);
 }
 
+// Formatar data
+function formatDate(dateStr) {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+// Sanitizar HTML para prevenir XSS
+function escapeHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+
+// ============================================
+// CONSULTAS
+// ============================================
+
+// Carregar consultas do Supabase
+async function loadConsultas() {
+  try {
+    const { data, error } = await globalThis.supabase
+      .from('consultas')
+      .select('*')
+      .order('criado_em', { ascending: false });
+
+    if (error) throw error;
+    consultas = data || [];
+    console.log('[LOAD] Consultas carregadas:', consultas.length);
+  } catch (error) {
+    console.error('Erro ao carregar consultas:', error);
+    consultas = [];
+  }
+}
+
+// Renderizar secção de consultas
+function renderConsultas() {
+  const main = document.getElementById('main-content');
+
+  main.innerHTML = `
+    <div class="p-6 animate-fade-in">
+      <!-- Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 class="text-2xl font-bold text-gray-800">Consultas</h2>
+          <p class="text-sm text-gray-500 mt-1">Registo de consultas oftalmológicas</p>
+        </div>
+        <button onclick="showConsultaModal()" class="admin-btn-primary px-5 py-2.5 text-sm font-semibold flex items-center gap-2">
+          <i class="fa-solid fa-plus"></i>
+          Nova Consulta
+        </button>
+      </div>
+
+      <!-- Filtro -->
+      <div class="mb-4">
+        <input type="text" id="search-consultas" placeholder="Buscar por nome do paciente..."
+          class="admin-input w-full max-w-md px-4 py-2.5 text-sm"
+          oninput="filterConsultas(this.value)">
+      </div>
+
+      <!-- Tabela -->
+      <div id="consultas-table-container">
+        ${renderConsultasTable(consultas)}
+      </div>
+    </div>
+  `;
+
+  // Expor funções globalmente para onclick handlers
+  globalThis.showConsultaModal = showConsultaModal;
+  globalThis.editConsulta = editConsulta;
+  globalThis.deleteConsulta = deleteConsulta;
+  globalThis.printConsulta = printConsulta;
+  globalThis.filterConsultas = filterConsultas;
+  globalThis.closeConsultaModal = closeConsultaModal;
+  globalThis.selectPacienteFromList = selectPacienteFromList;
+}
+
+// Filtrar consultas por nome ou diagnóstico
+function filterConsultas(query) {
+  const filtered = consultas.filter(c =>
+    c.nome_paciente.toLowerCase().includes(query.toLowerCase()) ||
+    (c.diagnostico && c.diagnostico.toLowerCase().includes(query.toLowerCase()))
+  );
+  document.getElementById('consultas-table-container').innerHTML = renderConsultasTable(filtered);
+}
+
+// Renderizar tabela de consultas
+function renderConsultasTable(data) {
+  if (!data || data.length === 0) {
+    return `
+      <div class="admin-empty-state text-center py-16">
+        <div class="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
+          <i class="fa-solid fa-stethoscope text-3xl text-gray-400"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-700 mb-2">Nenhuma consulta registada</h3>
+        <p class="text-sm text-gray-400 mb-6">Registe a primeira consulta do paciente</p>
+        <button onclick="showConsultaModal()" class="admin-btn-primary px-5 py-2.5 text-sm font-semibold">
+          <i class="fa-solid fa-plus mr-2"></i>Nova Consulta
+        </button>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="admin-table-container overflow-x-auto">
+      <table class="w-full">
+        <thead>
+          <tr class="border-b border-gray-100">
+            <th class="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Paciente</th>
+            <th class="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Data</th>
+            <th class="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Diagnóstico</th>
+            <th class="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Próxima Consulta</th>
+            <th class="text-right py-3 px-4 text-xs font-semibold text-gray-500 uppercase">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.map(c => `
+            <tr class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+              <td class="py-3 px-4">
+                <div class="font-medium text-gray-800">${escapeHtml(c.nome_paciente)}</div>
+                ${c.telefone_paciente ? `<div class="text-xs text-gray-400">${escapeHtml(c.telefone_paciente)}</div>` : ''}
+              </td>
+              <td class="py-3 px-4 text-sm text-gray-600">
+                ${formatDate(c.criado_em)}
+              </td>
+              <td class="py-3 px-4 text-sm text-gray-600 max-w-xs truncate">
+                ${escapeHtml(c.diagnostico || '-')}
+              </td>
+              <td class="py-3 px-4 text-sm text-gray-600">
+                ${c.data_proxima_consulta ? formatDate(c.data_proxima_consulta) : '-'}
+              </td>
+              <td class="py-3 px-4 text-right">
+                <div class="flex items-center justify-end gap-2">
+                  <button onclick="generatePrescricaoPDF('${c.id}')" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Gerar PDF">
+                    <i class="fa-solid fa-file-pdf"></i>
+                  </button>
+                  <button onclick="printConsulta('${c.id}')" class="p-2 text-gray-400 hover:text-cyan hover:bg-cyan/10 rounded-lg transition-all" title="Imprimir">
+                    <i class="fa-solid fa-print"></i>
+                  </button>
+                  <button onclick="editConsulta('${c.id}')" class="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all" title="Editar">
+                    <i class="fa-solid fa-pen"></i>
+                  </button>
+                  <button onclick="deleteConsulta('${c.id}')" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all" title="Eliminar">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// Filtrar consultas
+function filterConsultas(query) {
+  const filtered = consultas.filter(c =>
+    c.nome_paciente.toLowerCase().includes(query.toLowerCase()) ||
+    (c.diagnostico && c.diagnostico.toLowerCase().includes(query.toLowerCase()))
+  );
+  document.getElementById('consultas-table-container').innerHTML = renderConsultasTable(filtered);
+}
+
+// Modal de consulta
+function showConsultaModal(consulta = null) {
+  currentConsulta = consulta;
+  const isEdit = !!consulta;
+
+  const modal = document.createElement('div');
+  modal.id = 'consulta-modal';
+  modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4';
+  modal.innerHTML = `
+    <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <!-- Header -->
+      <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-navy to-navy/90 rounded-t-2xl sticky top-0 z-10">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-stethoscope text-cyan"></i>
+          ${isEdit ? 'Editar Consulta' : 'Nova Consulta'}
+        </h3>
+        <button onclick="closeConsultaModal()" class="text-white/60 hover:text-white transition-colors">
+          <i class="fa-solid fa-times text-lg"></i>
+        </button>
+      </div>
+
+      <form id="consulta-form" class="p-6 space-y-6">
+        <!-- Secção 1: Dados do Paciente -->
+        <div class="bg-gray-50 rounded-xl p-4">
+          <h4 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-user text-cyan"></i> Dados do Paciente
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="md:col-span-2 relative">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">
+                Nome Completo * ${!isEdit ? '<span class="text-gray-400 font-normal">(selecione um paciente com agendamento)</span>' : ''}
+              </label>
+              <input type="text" id="consulta-nome" required
+                class="admin-input w-full px-3 py-2 text-sm"
+                value="${escapeHtml(consulta?.nome_paciente || '')}"
+                ${isEdit ? '' : 'autocomplete="off"'}>
+              <div id="autocomplete-pacientes" class="hidden absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto"></div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Telefone</label>
+              <input type="tel" id="consulta-telefone"
+                class="admin-input w-full px-3 py-2 text-sm"
+                value="${escapeHtml(consulta?.telefone_paciente || '')}">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Email</label>
+              <input type="email" id="consulta-email"
+                class="admin-input w-full px-3 py-2 text-sm"
+                value="${escapeHtml(consulta?.email_paciente || '')}">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Data de Nascimento</label>
+              <input type="date" id="consulta-nascimento"
+                class="admin-input w-full px-3 py-2 text-sm"
+                value="${consulta?.data_nascimento || ''}">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Gênero</label>
+              <select id="consulta-genero" class="admin-input w-full px-3 py-2 text-sm">
+                <option value="">Selecionar...</option>
+                <option value="M" ${consulta?.genero === 'M' ? 'selected' : ''}>Masculino</option>
+                <option value="F" ${consulta?.genero === 'F' ? 'selected' : ''}>Feminino</option>
+                <option value="Outro" ${consulta?.genero === 'Outro' ? 'selected' : ''}>Outro</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Secção 2: Histórico Clínico -->
+        <div class="bg-gray-50 rounded-xl p-4">
+          <h4 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-notes-medical text-cyan"></i> Histórico Clínico
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="md:col-span-2">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Queixa Principal</label>
+              <textarea id="consulta-queixa" rows="2"
+                class="admin-input w-full px-3 py-2 text-sm">${escapeHtml(consulta?.queixa_principal || '')}</textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Histórico Médico</label>
+              <textarea id="consulta-historico" rows="2"
+                class="admin-input w-full px-3 py-2 text-sm">${escapeHtml(consulta?.historico_medico || '')}</textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Medicação Atual</label>
+              <textarea id="consulta-medicacao" rows="2"
+                class="admin-input w-full px-3 py-2 text-sm">${escapeHtml(consulta?.medicacao_atual || '')}</textarea>
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Alergias</label>
+              <input type="text" id="consulta-alergias"
+                class="admin-input w-full px-3 py-2 text-sm"
+                value="${escapeHtml(consulta?.alergias || '')}">
+            </div>
+          </div>
+        </div>
+
+        <!-- Secção 3: Exame Oftalmológico -->
+        <div class="bg-gray-50 rounded-xl p-4">
+          <h4 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-eye text-cyan"></i> Exame Oftalmológico
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Acuidade Visual OD</label>
+              <input type="text" id="consulta-acuidade-od" placeholder="Ex: 20/20"
+                class="admin-input w-full px-3 py-2 text-sm"
+                value="${escapeHtml(consulta?.acuidade_visual_od || '')}">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Acuidade Visual OE</label>
+              <input type="text" id="consulta-acuidade-oe" placeholder="Ex: 20/20"
+                class="admin-input w-full px-3 py-2 text-sm"
+                value="${escapeHtml(consulta?.acuidade_visual_oe || '')}">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Pressão Intraocular OD (mmHg)</label>
+              <input type="text" id="consulta-pio-od" placeholder="Ex: 15"
+                class="admin-input w-full px-3 py-2 text-sm"
+                value="${escapeHtml(consulta?.pressao_intraocular_od || '')}">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Pressão Intraocular OE (mmHg)</label>
+              <input type="text" id="consulta-pio-oe" placeholder="Ex: 15"
+                class="admin-input w-full px-3 py-2 text-sm"
+                value="${escapeHtml(consulta?.pressao_intraocular_oe || '')}">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Refração OD</label>
+              <input type="text" id="consulta-refracao-od" placeholder="Ex: -2.00"
+                class="admin-input w-full px-3 py-2 text-sm"
+                value="${escapeHtml(consulta?.refracao_od || '')}">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Refração OE</label>
+              <input type="text" id="consulta-refracao-oe" placeholder="Ex: -1.50"
+                class="admin-input w-full px-3 py-2 text-sm"
+                value="${escapeHtml(consulta?.refracao_oe || '')}">
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Fundo do Olho</label>
+              <textarea id="consulta-fundo-olho" rows="2"
+                class="admin-input w-full px-3 py-2 text-sm">${escapeHtml(consulta?.fundo_olho || '')}</textarea>
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Observações do Exame</label>
+              <textarea id="consulta-obs-exame" rows="2"
+                class="admin-input w-full px-3 py-2 text-sm">${escapeHtml(consulta?.observacoes_exame || '')}</textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Secção 4: Diagnóstico e Prescrição -->
+        <div class="bg-gray-50 rounded-xl p-4">
+          <h4 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-prescription text-cyan"></i> Diagnóstico e Prescrição
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="md:col-span-2">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Diagnóstico</label>
+              <textarea id="consulta-diagnostico" rows="2"
+                class="admin-input w-full px-3 py-2 text-sm">${escapeHtml(consulta?.diagnostico || '')}</textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Prescrição de Lentes</label>
+              <textarea id="consulta-lentes" rows="2"
+                class="admin-input w-full px-3 py-2 text-sm">${escapeHtml(consulta?.prescricao_lentes || '')}</textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Prescrição de Medicação</label>
+              <textarea id="consulta-medicacao-rx" rows="2"
+                class="admin-input w-full px-3 py-2 text-sm">${escapeHtml(consulta?.prescricao_medicacao || '')}</textarea>
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Observações Gerais</label>
+              <textarea id="consulta-observacoes" rows="2"
+                class="admin-input w-full px-3 py-2 text-sm">${escapeHtml(consulta?.observacoes || '')}</textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1">Data da Próxima Consulta</label>
+              <input type="date" id="consulta-proxima"
+                class="admin-input w-full px-3 py-2 text-sm"
+                value="${consulta?.data_proxima_consulta || ''}">
+            </div>
+          </div>
+        </div>
+
+        <!-- Botões -->
+        <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
+          <button type="button" onclick="closeConsultaModal()"
+            class="admin-btn-secondary px-5 py-2.5 text-sm font-semibold">
+            Cancelar
+          </button>
+          <button type="submit" id="submit-consulta-btn"
+            class="admin-btn-primary px-5 py-2.5 text-sm font-semibold">
+            <i class="fa-solid fa-save mr-2"></i>${isEdit ? 'Atualizar' : 'Salvar'}
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Submit handler
+  document.getElementById('consulta-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await saveConsulta();
+  });
+
+  // Fechar ao clicar fora
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeConsultaModal();
+  });
+
+  // Autocomplete de pacientes (apenas para novas consultas)
+  if (!isEdit) {
+    setupPacienteAutocomplete();
+  }
+
+  document.getElementById('consulta-nome').focus();
+}
+
+// Configurar autocomplete de pacientes com agendamentos
+function setupPacienteAutocomplete() {
+  const input = document.getElementById('consulta-nome');
+  const dropdown = document.getElementById('autocomplete-pacientes');
+  if (!input || !dropdown) return;
+
+  // Criar lista única de pacientes a partir de TODOS os agendamentos
+  const pacientesMap = new Map();
+  agendamentos.forEach(a => {
+    const nome = (a.cliente_nome || '').trim();
+    if (nome && !pacientesMap.has(nome.toLowerCase())) {
+      pacientesMap.set(nome.toLowerCase(), {
+        nome: a.cliente_nome,
+        telefone: a.cliente_telefone || '',
+        servico: a.servico || ''
+      });
+    }
+  });
+
+  // Adicionar também clientes da tabela clientes
+  clientes.forEach(c => {
+    const nome = (c.nome || '').trim();
+    if (nome && !pacientesMap.has(nome.toLowerCase())) {
+      pacientesMap.set(nome.toLowerCase(), {
+        nome: c.nome,
+        telefone: c.telefone || '',
+        servico: ''
+      });
+    } else if (nome && pacientesMap.has(nome.toLowerCase())) {
+      // Atualizar email se existir
+      const existing = pacientesMap.get(nome.toLowerCase());
+      if (c.email) existing.email = c.email;
+    }
+  });
+
+  const pacientesList = Array.from(pacientesMap.values());
+
+  input.addEventListener('input', () => {
+    const query = input.value.trim().toLowerCase();
+    if (query.length < 2) {
+      dropdown.classList.add('hidden');
+      return;
+    }
+
+    const matches = pacientesList.filter(p =>
+      p.nome.toLowerCase().includes(query)
+    );
+
+    if (matches.length === 0) {
+      dropdown.classList.add('hidden');
+      return;
+    }
+
+    dropdown.innerHTML = matches.map(p => `
+      <div class="px-4 py-3 hover:bg-cyan/10 cursor-pointer border-b border-gray-50 last:border-0 transition-colors"
+           onclick="selectPacienteFromList('${escapeHtml(p.nome)}', '${escapeHtml(p.telefone)}', '${escapeHtml(p.email || '')}', '${escapeHtml(p.servico)}')">
+        <div class="font-medium text-sm text-gray-800">${escapeHtml(p.nome)}</div>
+        <div class="text-xs text-gray-400">${escapeHtml(p.telefone)} ${p.email ? '· ' + escapeHtml(p.email) : ''}</div>
+      </div>
+    `).join('');
+
+    dropdown.classList.remove('hidden');
+  });
+
+  // Fechar dropdown ao clicar fora
+  document.addEventListener('click', (e) => {
+    if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.classList.add('hidden');
+    }
+  });
+}
+
+// Selecionar paciente do autocomplete
+function selectPacienteFromList(nome, telefone, email, servico) {
+  document.getElementById('consulta-nome').value = nome;
+  document.getElementById('consulta-telefone').value = telefone;
+  document.getElementById('consulta-email').value = email || '';
+  document.getElementById('autocomplete-pacientes').classList.add('hidden');
+
+  // Preencher queixa principal com o serviço
+  if (servico) {
+    document.getElementById('consulta-queixa').value = servico;
+  }
+}
+
+// Fechar modal
+function closeConsultaModal() {
+  const modal = document.getElementById('consulta-modal');
+  if (modal) modal.remove();
+  currentConsulta = null;
+}
+
+// Salvar consulta
+async function saveConsulta() {
+  const btn = document.getElementById('submit-consulta-btn');
+  if (!btn) return;
+
+  const data = {
+    nome_paciente: document.getElementById('consulta-nome').value.trim(),
+    telefone_paciente: document.getElementById('consulta-telefone').value.trim() || null,
+    email_paciente: document.getElementById('consulta-email').value.trim() || null,
+    data_nascimento: document.getElementById('consulta-nascimento').value || null,
+    genero: document.getElementById('consulta-genero').value || null,
+    queixa_principal: document.getElementById('consulta-queixa').value.trim() || null,
+    historico_medico: document.getElementById('consulta-historico').value.trim() || null,
+    medicacao_atual: document.getElementById('consulta-medicacao').value.trim() || null,
+    alergias: document.getElementById('consulta-alergias').value.trim() || null,
+    acuidade_visual_od: document.getElementById('consulta-acuidade-od').value.trim() || null,
+    acuidade_visual_oe: document.getElementById('consulta-acuidade-oe').value.trim() || null,
+    pressao_intraocular_od: document.getElementById('consulta-pio-od').value.trim() || null,
+    pressao_intraocular_oe: document.getElementById('consulta-pio-oe').value.trim() || null,
+    refracao_od: document.getElementById('consulta-refracao-od').value.trim() || null,
+    refracao_oe: document.getElementById('consulta-refracao-oe').value.trim() || null,
+    fundo_olho: document.getElementById('consulta-fundo-olho').value.trim() || null,
+    observacoes_exame: document.getElementById('consulta-obs-exame').value.trim() || null,
+    diagnostico: document.getElementById('consulta-diagnostico').value.trim() || null,
+    prescricao_lentes: document.getElementById('consulta-lentes').value.trim() || null,
+    prescricao_medicacao: document.getElementById('consulta-medicacao-rx').value.trim() || null,
+    observacoes: document.getElementById('consulta-observacoes').value.trim() || null,
+    data_proxima_consulta: document.getElementById('consulta-proxima').value || null
+  };
+
+  if (!data.nome_paciente) {
+    showToast('Preencha o nome do paciente', 'error');
+    return;
+  }
+
+  // Verificar duplicados apenas ao criar nova consulta
+  if (!currentConsulta?.id) {
+    const { data: existing } = await globalThis.supabase
+      .from('consultas')
+      .select('id')
+      .eq('nome_paciente', data.nome_paciente)
+      .limit(1);
+
+    if (existing && existing.length > 0) {
+      showToast('Já existe uma consulta registada para este paciente', 'error');
+      btn.disabled = false;
+      btn.innerHTML = 'Salvar Consulta';
+      return;
+    }
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Salvando...';
+
+  try {
+    // Debug completo da sessão
+    const { data: sessaoData, error: sessaoErro } = await globalThis.supabase.auth.getSession();
+    console.log('🔍 [DEBUG] ============================');
+    console.log('🔍 [DEBUG] SESSÃO');
+    console.log('🔍 [DEBUG] Existe sessão:', !!sessaoData?.session);
+    console.log('🔍 [DEBUG] Access token existe:', !!sessaoData?.session?.access_token);
+    if (sessaoData?.session?.access_token) {
+      console.log('🔍 [DEBUG] Token (primeiros 30 chars):', sessaoData.session.access_token.substring(0, 30));
+    }
+    console.log('🔍 [DEBUG] User email:', sessaoData?.session?.user?.email || 'NENHUM');
+    console.log('🔍 [DEBUG] User id:', sessaoData?.session?.user?.id || 'NENHUM');
+    console.log('🔍 [DEBUG] Erro sessão:', sessaoErro ? JSON.stringify(sessaoErro) : 'NENHUM');
+    console.log('🔍 [DEBUG] ============================');
+
+    // Testar SELECT primeiro
+    console.log('🔍 [DEBUG] Testando SELECT na tabela consultas...');
+    const { data: testData, error: testError } = await globalThis.supabase
+      .from('consultas')
+      .select('id')
+      .limit(1);
+    console.log('🔍 [DEBUG] SELECT resultado:', JSON.stringify({ data: testData, error: testError }));
+
+    if (currentConsulta?.id) {
+      const { data: updateData, error: updateError } = await globalThis.supabase
+        .from('consultas')
+        .update(data)
+        .eq('id', currentConsulta.id)
+        .select();
+      console.log('🔍 [DEBUG] UPDATE resultado:', JSON.stringify({ data: updateData, error: updateError }));
+      if (updateError) throw updateError;
+      showToast('Consulta atualizada com sucesso!', 'success');
+    } else {
+      console.log('🔍 [DEBUG] Tentando INSERT com dados:', JSON.stringify(data));
+      const { data: insertData, error: insertError } = await globalThis.supabase
+        .from('consultas')
+        .insert([data])
+        .select();
+      console.log('🔍 [DEBUG] INSERT resultado:', JSON.stringify({ data: insertData, error: insertError }));
+      if (insertError) throw insertError;
+
+      // Adicionar/atualizar cliente na secção Clientes
+      await addClienteFromConsulta(data);
+
+      // Marcar agendamento como "feito"
+      await marcarAgendamentoFeito(data.nome_paciente);
+
+      showToast('Consulta registada com sucesso!', 'success');
+    }
+
+    await loadConsultas();
+    await loadClientes();
+    await loadAgendamentos();
+    renderConsultas();
+    closeConsultaModal();
+  } catch (error) {
+    console.error('Erro ao salvar consulta:', error);
+    showToast('Erro ao salvar consulta: ' + (error.message || ''), 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-save mr-2"></i>Salvar';
+  }
+}
+
+// Marcar agendamento como "feito" após criar consulta
+async function marcarAgendamentoFeito(nomePaciente) {
+  try {
+    if (!nomePaciente) return;
+
+    const nome = nomePaciente.trim();
+
+    // Encontrar agendamento pendente/confirmado mais recente deste paciente
+    const { data: agendamentos } = await globalThis.supabase
+      .from('agendamentos')
+      .select('*')
+      .ilike('cliente_nome', nome)
+      .in('status', ['pendente', 'confirmado'])
+      .order('data', { ascending: false })
+      .limit(1);
+
+    if (agendamentos && agendamentos.length > 0) {
+      const { error } = await globalThis.supabase
+        .from('agendamentos')
+        .update({ status: 'feito' })
+        .eq('id', agendamentos[0].id);
+
+      if (error) throw error;
+      console.log('[AGENDAMENTO] Status atualizado para "feito":', agendamentos[0].cliente_nome);
+    }
+  } catch (error) {
+    console.error('[AGENDAMENTO] Erro ao atualizar status:', error);
+  }
+}
+
+// Adicionar/atualizar cliente a partir dos dados da consulta
+async function addClienteFromConsulta(consultaData) {
+  try {
+    if (!consultaData.nome_paciente) return;
+
+    // Verificar se cliente já existe (por nome + telefone)
+    const nome = consultaData.nome_paciente.trim();
+    const telefone = consultaData.telefone_paciente?.trim() || null;
+    const email = consultaData.email_paciente?.trim() || null;
+
+    // Buscar cliente existente
+    let clienteExistente = null;
+    if (telefone) {
+      const { data } = await globalThis.supabase
+        .from('clientes')
+        .select('*')
+        .eq('nome', nome)
+        .eq('telefone', telefone)
+        .maybeSingle();
+      clienteExistente = data;
+    } else {
+      const { data } = await globalThis.supabase
+        .from('clientes')
+        .select('*')
+        .eq('nome', nome)
+        .maybeSingle();
+      clienteExistente = data;
+    }
+
+    if (clienteExistente) {
+      // Atualizar dados se necessário
+      const updates = {};
+      if (email && !clienteExistente.email) updates.email = email;
+      if (telefone && !clienteExistente.telefone) updates.telefone = telefone;
+
+      if (Object.keys(updates).length > 0) {
+        await globalThis.supabase
+          .from('clientes')
+          .update(updates)
+          .eq('id', clienteExistente.id);
+        console.log('[CLIENTE] Atualizado:', nome);
+      }
+    } else {
+      // Criar novo cliente
+      const { error } = await globalThis.supabase
+        .from('clientes')
+        .insert([{
+          nome: nome,
+          telefone: telefone,
+          email: email
+        }]);
+      if (error) {
+        console.error('[CLIENTE] Erro ao criar:', error);
+      } else {
+        console.log('[CLIENTE] Criado:', nome);
+      }
+    }
+  } catch (error) {
+    console.error('[CLIENTE] Erro ao adicionar cliente:', error);
+  }
+}
+
+
+
+
+
+
+// Editar consulta
+async function editConsulta(id) {
+  try {
+    const { data, error } = await globalThis.supabase
+      .from('consultas')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    showConsultaModal(data);
+  } catch (error) {
+    console.error('Erro ao carregar consulta:', error);
+    showToast('Erro ao carregar consulta', 'error');
+  }
+}
+
+// Eliminar consulta
+async function deleteConsulta(id) {
+  if (!confirm('Tem certeza que deseja eliminar este registo de consulta?')) return;
+
+  try {
+    const { error } = await globalThis.supabase
+      .from('consultas')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    showToast('Consulta eliminada com sucesso!', 'success');
+    await loadConsultas();
+    renderConsultas();
+  } catch (error) {
+    console.error('Erro ao eliminar consulta:', error);
+    showToast('Erro ao eliminar consulta', 'error');
+  }
+}
+
+// Imprimir consulta
+async function printConsulta(id) {
+  try {
+    const { data: c, error } = await globalThis.supabase
+      .from('consultas')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Consulta - ${escapeHtml(c.nome_paciente)}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Segoe UI', Arial, sans-serif; color: #333; padding: 40px; }
+          .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #0D1B2E; padding-bottom: 20px; margin-bottom: 30px; }
+          .header img { height: 80px; }
+          .header-info { text-align: right; }
+          .header-info h2 { color: #0D1B2E; font-size: 14px; }
+          .header-info p { color: #666; font-size: 12px; }
+          .patient-info { background: #f8f9fa; padding: 15px 20px; border-radius: 8px; margin-bottom: 25px; }
+          .patient-info h3 { color: #0D1B2E; font-size: 16px; margin-bottom: 10px; border-bottom: 1px solid #dee2e6; padding-bottom: 8px; }
+          .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+          .info-item { font-size: 13px; }
+          .info-item strong { color: #0D1B2E; }
+          .section { margin-bottom: 25px; }
+          .section h3 { color: #0D1B2E; font-size: 15px; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid #00aadc; }
+          .section-content { font-size: 13px; line-height: 1.6; }
+          .eye-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+          .eye-card { background: #f8f9fa; padding: 12px; border-radius: 6px; }
+          .eye-card h4 { color: #00aadc; font-size: 13px; margin-bottom: 8px; }
+          .eye-card .item { font-size: 12px; margin-bottom: 4px; }
+          .footer { margin-top: 40px; padding-top: 20px; border-top: 2px solid #0D1B2E; display: flex; justify-content: space-between; }
+          .footer .signature { width: 200px; text-align: center; }
+          .footer .signature .line { border-top: 1px solid #333; margin-top: 50px; padding-top: 5px; font-size: 12px; color: #666; }
+          @media print { body { padding: 20px; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <img src="../Logo/viva_logo_branco.jpeg" alt="Viva Óptica" onerror="this.style.display='none'">
+          <div class="header-info">
+            <h2>VIVA ÓPTICA</h2>
+            <p>Consultas Oftalmológicas</p>
+            <p>Data: ${formatDate(c.criado_em)}</p>
+          </div>
+        </div>
+
+        <div class="patient-info">
+          <h3><i class="fa-solid fa-user"></i> Dados do Paciente</h3>
+          <div class="info-grid">
+            <div class="info-item"><strong>Nome:</strong> ${escapeHtml(c.nome_paciente)}</div>
+            <div class="info-item"><strong>Telefone:</strong> ${escapeHtml(c.telefone_paciente || '-')}</div>
+            <div class="info-item"><strong>Email:</strong> ${escapeHtml(c.email_paciente || '-')}</div>
+            <div class="info-item"><strong>Data Nasc.:</strong> ${c.data_nascimento ? formatDate(c.data_nascimento) : '-'}</div>
+            <div class="info-item"><strong>Gênero:</strong> ${c.genero === 'M' ? 'Masculino' : c.genero === 'F' ? 'Feminino' : c.genero || '-'}</div>
+          </div>
+        </div>
+
+        ${c.queixa_principal || c.historico_medico || c.medicacao_atual || c.alergias ? `
+        <div class="section">
+          <h3>Histórico Clínico</h3>
+          <div class="section-content">
+            ${c.queixa_principal ? `<p><strong>Queixa Principal:</strong> ${escapeHtml(c.queixa_principal)}</p>` : ''}
+            ${c.historico_medico ? `<p><strong>Histórico Médico:</strong> ${escapeHtml(c.historico_medico)}</p>` : ''}
+            ${c.medicacao_atual ? `<p><strong>Medicação Atual:</strong> ${escapeHtml(c.medicacao_atual)}</p>` : ''}
+            ${c.alergias ? `<p><strong>Alergias:</strong> ${escapeHtml(c.alergias)}</p>` : ''}
+          </div>
+        </div>
+        ` : ''}
+
+        ${(c.acuidade_visual_od || c.acuidade_visual_oe || c.pressao_intraocular_od || c.pressao_intraocular_oe || c.refracao_od || c.refracao_oe) ? `
+        <div class="section">
+          <h3>Exame Oftalmológico</h3>
+          <div class="eye-grid">
+            <div class="eye-card">
+              <h4>Olho Direito (OD)</h4>
+              ${c.acuidade_visual_od ? `<div class="item"><strong>Acuidade Visual:</strong> ${escapeHtml(c.acuidade_visual_od)}</div>` : ''}
+              ${c.pressao_intraocular_od ? `<div class="item"><strong>Pressão Intraocular:</strong> ${escapeHtml(c.pressao_intraocular_od)} mmHg</div>` : ''}
+              ${c.refracao_od ? `<div class="item"><strong>Refração:</strong> ${escapeHtml(c.refracao_od)}</div>` : ''}
+            </div>
+            <div class="eye-card">
+              <h4>Olho Esquerdo (OE)</h4>
+              ${c.acuidade_visual_oe ? `<div class="item"><strong>Acuidade Visual:</strong> ${escapeHtml(c.acuidade_visual_oe)}</div>` : ''}
+              ${c.pressao_intraocular_oe ? `<div class="item"><strong>Pressão Intraocular:</strong> ${escapeHtml(c.pressao_intraocular_oe)} mmHg</div>` : ''}
+              ${c.refracao_oe ? `<div class="item"><strong>Refração:</strong> ${escapeHtml(c.refracao_oe)}</div>` : ''}
+            </div>
+          </div>
+          ${c.fundo_olho ? `<p style="margin-top:12px;font-size:13px"><strong>Fundo do Olho:</strong> ${escapeHtml(c.fundo_olho)}</p>` : ''}
+          ${c.observacoes_exame ? `<p style="margin-top:8px;font-size:13px"><strong>Observações:</strong> ${escapeHtml(c.observacoes_exame)}</p>` : ''}
+        </div>
+        ` : ''}
+
+        ${c.diagnostico || c.prescricao_lentes || c.prescricao_medicacao ? `
+        <div class="section">
+          <h3>Diagnóstico e Prescrição</h3>
+          <div class="section-content">
+            ${c.diagnostico ? `<p><strong>Diagnóstico:</strong> ${escapeHtml(c.diagnostico)}</p>` : ''}
+            ${c.prescricao_lentes ? `<p><strong>Prescrição de Lentes:</strong> ${escapeHtml(c.prescricao_lentes)}</p>` : ''}
+            ${c.prescricao_medicacao ? `<p><strong>Prescrição de Medicação:</strong> ${escapeHtml(c.prescricao_medicacao)}</p>` : ''}
+            ${c.observacoes ? `<p><strong>Observações:</strong> ${escapeHtml(c.observacoes)}</p>` : ''}
+            ${c.data_proxima_consulta ? `<p><strong>Próxima Consulta:</strong> ${formatDate(c.data_proxima_consulta)}</p>` : ''}
+          </div>
+        </div>
+        ` : ''}
+
+        <div class="footer">
+          <div></div>
+          <div class="signature">
+            <div class="line">Médico</div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+    setTimeout(() => printWindow.print(), 500);
+  } catch (error) {
+    console.error('Erro ao gerar impressão:', error);
+    showToast('Erro ao gerar impressão', 'error');
+  }
+}
+
 
 // ============================================
 // INICIALIZACAO
@@ -2535,7 +3431,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await Promise.all([
     loadAgendamentos(),
     loadClientes(),
-    loadConfiguracoes()
+    loadConsultas()
   ]);
 
   console.log('✅ [APP] Dados carregados');
@@ -2546,5 +3442,291 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Configurar navegação do sidebar
   setupNavigation();
 
+  // Expor função de PDF globalmente
+  globalThis.generatePrescricaoPDF = generatePrescricaoPDF;
+
   console.log('✅ [APP] Painel inicializado');
 });
+
+// ============================================
+// GERADOR DE PDF - RECEITA MÉDICA DE ÓCULOS
+// ============================================
+
+// Calcular idade a partir da data de nascimento
+function calcularIdade(dataNascimento) {
+  if (!dataNascimento) return '-';
+  const hoje = new Date();
+  const nascimento = new Date(dataNascimento);
+  let idade = hoje.getFullYear() - nascimento.getFullYear();
+  const mes = hoje.getMonth() - nascimento.getMonth();
+  if (mes < 0 || (mes === 0 && hoje.getDate() < nascimento.getDate())) {
+    idade--;
+  }
+  return idade + ' anos';
+}
+
+// Formatar data para exibição
+function formatarData(dataStr) {
+  if (!dataStr) return '-';
+  const data = new Date(dataStr);
+  return data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+// Gerar PDF da receita médica
+async function generatePrescricaoPDF(id) {
+  try {
+    const { data: consulta, error } = await globalThis.supabase
+      .from('consultas')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+
+    // Usar jsPDF (carregado via CDN)
+    const jsPDF = window.jspdf?.jsPDF;
+    if (!jsPDF) throw new Error('jsPDF não carregado');
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = 210;
+    const margin = 15;
+    const contentWidth = pageWidth - (margin * 2);
+    let y = margin;
+
+    // === CABEÇALHO ===
+    // Converter logo para base64 via fetch
+    let logoBase64 = null;
+    try {
+      const logoPaths = ['../Logo/viva_logo_branco.jpeg', '../Logo/viva_logo.png', '../Logo/Logo_viva_otica.jpeg'];
+      for (const path of logoPaths) {
+        try {
+          const resp = await fetch(path);
+          if (resp.ok) {
+            const blob = await resp.blob();
+            logoBase64 = await new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result);
+              reader.onerror = () => resolve(null);
+              reader.readAsDataURL(blob);
+            });
+            if (logoBase64) break;
+          }
+        } catch (e) { /* tentar próximo caminho */ }
+      }
+    } catch (e) { console.warn('Logo não carregado:', e); }
+
+    if (logoBase64) {
+      doc.addImage(logoBase64, 'PNG', margin, y, 22, 22);
+    }
+
+    // Nome da clínica
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor(13, 27, 46);
+    doc.text('VIVA ÓPTICA', margin + 25, y + 8);
+
+    // Morada e contactos
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Morro Bento - Instituto Superior Metropolitano de Angola', margin + 25, y + 13);
+    doc.text('WhatsApp: 954 145 065 / 936 029 495', margin + 25, y + 17);
+
+    // Data à direita
+    doc.setFontSize(9);
+    doc.text('Data: ' + formatarData(consulta.criado_em), pageWidth - margin, y + 8, { align: 'right' });
+    doc.text('Ref: ' + (consulta.id ? consulta.id.substring(0, 8) : ''), pageWidth - margin, y + 13, { align: 'right' });
+
+    y += 25;
+
+    // Linha separadora
+    doc.setDrawColor(0, 170, 220);
+    doc.setLineWidth(0.8);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 8;
+
+    // === DADOS DO PACIENTE ===
+    doc.setFillColor(248, 249, 250);
+    doc.roundedRect(margin, y, contentWidth, 18, 2, 2, 'F');
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(100, 100, 100);
+    doc.text('NOME', margin + 3, y + 4);
+    doc.text('IDADE', margin + 100, y + 4);
+    doc.text('PRÓXIMA CONSULTA', margin + 135, y + 4);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(51, 51, 51);
+    doc.text(consulta.nome_paciente || '-', margin + 3, y + 11);
+    doc.setFont('helvetica', 'normal');
+    doc.text(calcularIdade(consulta.data_nascimento), margin + 100, y + 11);
+    doc.text(formatarData(consulta.data_proxima_consulta), margin + 135, y + 11);
+
+    y += 25;
+
+    // === TÍTULO RECEITA ===
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(13, 27, 46);
+    doc.text('RECEITA DE ÓCULOS', pageWidth / 2, y, { align: 'center' });
+
+    doc.setDrawColor(0, 170, 220);
+    doc.setLineWidth(0.3);
+    const titleWidth = doc.getTextWidth('RECEITA DE ÓCULOS');
+    doc.line((pageWidth / 2) - (titleWidth / 2), y + 1, (pageWidth / 2) + (titleWidth / 2), y + 1);
+    y += 10;
+
+    // === TABELA DE PRESCRIÇÃO ===
+    const colWidths = [30, 30, 30, 25, 25, 30]; // O.D/O.E, Esférico, Cilíndrico, Eixo, OP, ADD
+    const headers = ['', 'Esférico', 'Cilíndrico', 'Eixo', 'OP', 'ADD'];
+    const rows = [
+      ['OD Longe', consulta.refracao_od || '', '', '', '', ''],
+      ['OD Perto', '', '', '', '', ''],
+      ['OE Longe', consulta.refracao_oe || '', '', '', '', ''],
+      ['OE Perto', '', '', '', '', '']
+    ];
+
+    // Cabeçalho da tabela
+    doc.setFillColor(13, 27, 46);
+    doc.rect(margin, y, contentWidth, 8, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(255, 255, 255);
+    let x = margin;
+    headers.forEach((h, i) => {
+      doc.text(h, x + colWidths[i] / 2, y + 5.5, { align: 'center' });
+      x += colWidths[i];
+    });
+    y += 8;
+
+    // Linhas da tabela
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(51, 51, 51);
+    rows.forEach((row, rowIndex) => {
+      x = margin;
+      const isOD = rowIndex < 2;
+      const isLonge = rowIndex % 2 === 0;
+
+      row.forEach((cell, colIndex) => {
+        // Bordas
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.2);
+        doc.rect(x, y, colWidths[colIndex], 8);
+
+        // Fundo da primeira coluna
+        if (colIndex === 0) {
+          doc.setFillColor(240, 249, 255);
+          doc.rect(x, y, colWidths[colIndex], 8, 'F');
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(8);
+          doc.text(cell, x + colWidths[colIndex] / 2, y + 4, { align: 'center' });
+          doc.setFontSize(6);
+          doc.setTextColor(100, 100, 100);
+          doc.text(isLonge ? 'Longe' : 'Perto', x + colWidths[colIndex] / 2, y + 7, { align: 'center' });
+          doc.setTextColor(51, 51, 51);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9);
+        } else {
+          doc.text(cell, x + colWidths[colIndex] / 2, y + 5.5, { align: 'center' });
+        }
+        x += colWidths[colIndex];
+      });
+      y += 8;
+    });
+
+    y += 5;
+
+    // === INFORMAÇÕES DO EXAME ===
+    doc.setFillColor(248, 249, 250);
+    doc.roundedRect(margin, y, contentWidth, 12, 2, 2, 'F');
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(51, 51, 51);
+    doc.text('Acuidade Visual:  OD: ' + (consulta.acuidade_visual_od || '-') + '  |  OE: ' + (consulta.acuidade_visual_oe || '-'), margin + 3, y + 5);
+    doc.text('Pressão Intraocular:  OD: ' + (consulta.pressao_intraocular_od || '-') + '  |  OE: ' + (consulta.pressao_intraocular_oe || '-'), margin + 3, y + 10);
+
+    y += 18;
+
+    // === PRESCRIÇÃO DE LENTES ===
+    if (consulta.prescricao_lentes) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(13, 27, 46);
+      doc.text('Prescrição de Lentes', margin, y);
+      doc.setDrawColor(200, 200, 200);
+      doc.line(margin, y + 1, pageWidth - margin, y + 1);
+      y += 5;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(51, 51, 51);
+      const lentesLines = doc.splitTextToSize(consulta.prescricao_lentes, contentWidth);
+      doc.text(lentesLines, margin, y);
+      y += lentesLines.length * 4.5 + 5;
+    }
+
+    // === DIAGNÓSTICO ===
+    if (consulta.diagnostico) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(13, 27, 46);
+      doc.text('Diagnóstico', margin, y);
+      doc.setDrawColor(200, 200, 200);
+      doc.line(margin, y + 1, pageWidth - margin, y + 1);
+      y += 5;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(51, 51, 51);
+      const diagLines = doc.splitTextToSize(consulta.diagnostico, contentWidth);
+      doc.text(diagLines, margin, y);
+      y += diagLines.length * 4.5 + 5;
+    }
+
+    // === OBSERVAÇÕES ===
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(13, 27, 46);
+    doc.text('Observações', margin, y);
+    doc.setDrawColor(200, 200, 200);
+    doc.line(margin, y + 1, pageWidth - margin, y + 1);
+    y += 5;
+
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(margin, y, contentWidth, 20, 2, 2, 'S');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(51, 51, 51);
+    const obsText = consulta.observacoes || consulta.prescricao_medicacao || 'Anti Foto Grey';
+    doc.text(obsText, margin + 3, y + 6);
+
+    y += 30;
+
+    // === RODAPÉ ===
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(150, 150, 150);
+    doc.text('Viva Óptica - Morro Bento, ISMA', margin, y);
+    doc.text('Tel: 954 145 065 / 936 029 495', margin, y + 4);
+
+    // Linha de assinatura
+    doc.setDrawColor(51, 51, 51);
+    doc.setLineWidth(0.3);
+    doc.line(pageWidth - margin - 70, y + 10, pageWidth - margin, y + 10);
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Assinatura do Optometrista', pageWidth - margin - 35, y + 14, { align: 'center' });
+
+    // Descarregar PDF
+    const fileName = `receita_${(consulta.nome_paciente || 'paciente').replace(/\s+/g, '_')}.pdf`;
+    doc.save(fileName);
+
+    showToast('PDF gerado com sucesso!', 'success');
+
+  } catch (error) {
+    console.error('Erro ao gerar PDF:', error);
+    showToast('Erro ao gerar PDF: ' + (error.message || ''), 'error');
+  }
+}
