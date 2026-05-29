@@ -1837,17 +1837,28 @@ async function loadSlides() {
 // Upload de imagem para o bucket 'banners'
 async function uploadSlideImage(file) {
 	const fileName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
-	const { error } = await globalThis.supabase.storage
-		.from(SLIDES_BUCKET)
-		.upload(fileName, file, { cacheControl: '3600', upsert: false });
+	console.log('🔍 [DEBUG] uploadSlideImage - fileName:', fileName, 'bucket:', SLIDES_BUCKET, 'fileSize:', file.size);
 
-	if (error) throw error;
+	try {
+		console.log('🔍 [DEBUG] Iniciando upload para Supabase Storage...');
+		const { data, error } = await globalThis.supabase.storage
+			.from(SLIDES_BUCKET)
+			.upload(fileName, file, { cacheControl: '3600', upsert: false });
 
-	const { data: urlData } = globalThis.supabase.storage
-		.from(SLIDES_BUCKET)
-		.getPublicUrl(fileName);
+		console.log('🔍 [DEBUG] Resposta upload - data:', data, 'error:', error);
+		if (error) throw error;
 
-	return urlData.publicUrl;
+		console.log('🔍 [DEBUG] Obtendo URL pública...');
+		const { data: urlData } = globalThis.supabase.storage
+			.from(SLIDES_BUCKET)
+			.getPublicUrl(fileName);
+
+		console.log('✅ [DEBUG] URL pública:', urlData.publicUrl);
+		return urlData.publicUrl;
+	} catch (err) {
+		console.error('❌ [DEBUG] Erro no uploadSlideImage:', err);
+		throw err;
+	}
 }
 
 // Deletar imagem do storage
@@ -1877,6 +1888,7 @@ function getFileNameFromUrl(url) {
 
 // Abrir modal de adicionar/editar slide com drag-and-drop
 async function showSlideModal(slide = null) {
+	console.log('🔍 [DEBUG] showSlideModal chamada, slide:', slide);
 	currentSlide = slide;
 	currentSlideImage = null;
 
@@ -1900,16 +1912,17 @@ async function showSlideModal(slide = null) {
 				<!-- Drag-and-Drop Upload Zone -->
 				<div>
 					<label class="block text-sm font-semibold text-gray-700 mb-2">Imagem do Slide</label>
-					<div id="slide-drop-zone" class="relative border-2 border-dashed border-gray-300 rounded-xl p-6 text-center cursor-pointer transition-all duration-200 hover:border-cyan hover:bg-cyan/5 group">
+					<div id="slide-drop-zone" class="relative border-2 border-dashed border-gray-300 rounded-xl p-6 text-center cursor-pointer transition-all duration-200 hover:border-cyan hover:bg-cyan/5 group overflow-hidden">
+						<div id="slide-blur-bg" class="hidden absolute inset-0 bg-cover bg-center filter blur-lg scale-110 opacity-40"></div>
 						<input type="file" id="slide-image" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-						<div id="slide-drop-placeholder" class="space-y-2">
+						<div id="slide-drop-placeholder" class="relative z-10 space-y-2">
 							<div class="w-12 h-12 mx-auto bg-cyan/10 rounded-full flex items-center justify-center group-hover:bg-cyan/20 transition-colors">
 								<i class="fa-solid fa-cloud-arrow-up text-xl text-cyan"></i>
 							</div>
 							<p class="text-sm font-medium text-gray-600">Arraste e solte a imagem aqui</p>
 							<p class="text-xs text-gray-400">ou clique para selecionar (PNG, JPG até 5MB)</p>
 						</div>
-						<div id="slide-drop-preview" class="hidden">
+						<div id="slide-drop-preview" class="hidden relative z-10">
 							<img id="slide-image-preview" src="" alt="Preview" class="w-full h-52 object-cover rounded-lg shadow-sm">
 							<p id="slide-file-name" class="text-xs text-gray-500 mt-2 truncate"></p>
 						</div>
@@ -1969,6 +1982,7 @@ async function showSlideModal(slide = null) {
 	`;
 
 	document.body.appendChild(modal);
+	console.log('✅ [DEBUG] Modal adicionado ao DOM');
 
 	// --- Setup Drag-and-Drop ---
 	const dropZone = document.getElementById('slide-drop-zone');
@@ -2026,17 +2040,30 @@ async function showSlideModal(slide = null) {
 			const placeholder = document.getElementById('slide-drop-placeholder');
 			const fileName = document.getElementById('slide-file-name');
 			const clearBtn = document.getElementById('btn-clear-slide-image');
+			const dropZone = document.getElementById('slide-drop-zone');
+			const blurBg = document.getElementById('slide-blur-bg');
 
 			preview.src = slide.imagem_url;
 			fileName.textContent = getFileNameFromUrl(slide.imagem_url);
 			previewBox.classList.remove('hidden');
 			placeholder.classList.add('hidden');
 			clearBtn.classList.remove('hidden');
+
+			// Mostrar fundo desfocado
+			if (dropZone) {
+				dropZone.classList.remove('border-dashed', 'border-gray-300');
+				dropZone.classList.add('border-solid', 'border-transparent');
+			}
+			if (blurBg) {
+				blurBg.style.backgroundImage = `url(${slide.imagem_url})`;
+				blurBg.classList.remove('hidden');
+			}
 		}
 	}
 
 	// Submit handler
 	document.getElementById('slide-form').addEventListener('submit', async (e) => {
+		console.log('🔍 [DEBUG] Form submit event disparado');
 		e.preventDefault();
 		await saveSlide();
 	});
@@ -2054,7 +2081,9 @@ function closeSlideModal() {
 
 // Handler de seleção de imagem com preview
 function handleSlideImageSelect(event) {
+	console.log('🔍 [DEBUG] handleSlideImageSelect chamada');
 	const file = event.target.files?.[0];
+	console.log('🔍 [DEBUG] file:', file);
 	if (!file) return;
 
 	if (!file.type.startsWith('image/')) {
@@ -2074,6 +2103,10 @@ function handleSlideImageSelect(event) {
 	const fileNameEl = document.getElementById('slide-file-name');
 	const clearBtn = document.getElementById('btn-clear-slide-image');
 
+	const dropZone = document.getElementById('slide-drop-zone');
+
+	const blurBg = document.getElementById('slide-blur-bg');
+
 	if (preview && previewBox && placeholder) {
 		const reader = new FileReader();
 		reader.onload = (e) => {
@@ -2082,6 +2115,16 @@ function handleSlideImageSelect(event) {
 			previewBox.classList.remove('hidden');
 			placeholder.classList.add('hidden');
 			if (clearBtn) clearBtn.classList.remove('hidden');
+
+			// Remover borda tracejada e adicionar fundo desfocado
+			if (dropZone) {
+				dropZone.classList.remove('border-dashed', 'border-gray-300');
+				dropZone.classList.add('border-solid', 'border-transparent');
+			}
+			if (blurBg) {
+				blurBg.style.backgroundImage = `url(${e.target.result})`;
+				blurBg.classList.remove('hidden');
+			}
 		};
 		reader.readAsDataURL(file);
 	}
@@ -2097,6 +2140,8 @@ function clearSlideImage() {
 	const placeholder = document.getElementById('slide-drop-placeholder');
 	const fileNameEl = document.getElementById('slide-file-name');
 	const clearBtn = document.getElementById('btn-clear-slide-image');
+	const dropZone = document.getElementById('slide-drop-zone');
+	const blurBg = document.getElementById('slide-blur-bg');
 
 	if (preview) preview.src = '';
 	if (previewBox) previewBox.classList.add('hidden');
@@ -2104,16 +2149,29 @@ function clearSlideImage() {
 	if (fileNameEl) fileNameEl.textContent = '';
 	if (clearBtn) clearBtn.classList.add('hidden');
 
+	// Restaurar borda tracejada e remover fundo desfocado
+	if (dropZone) {
+		dropZone.classList.add('border-dashed', 'border-gray-300');
+		dropZone.classList.remove('border-solid', 'border-transparent');
+	}
+	if (blurBg) {
+		blurBg.style.backgroundImage = '';
+		blurBg.classList.add('hidden');
+	}
+
 	currentSlideImage = null;
 }
 
 // Validar dados do slide
 function validateSlideData(titulo, imagem_url) {
+	console.log('🔍 [DEBUG] validateSlideData - titulo:', titulo, 'imagem_url:', imagem_url);
 	if (!titulo) {
+		console.log('❌ [DEBUG] Título vazio');
 		showToast('Preencha o título do slide', 'error');
 		return false;
 	}
 	if (!imagem_url) {
+		console.log('❌ [DEBUG] imagem_url vazio');
 		showToast('Selecione uma imagem para o slide', 'error');
 		return false;
 	}
@@ -2122,7 +2180,9 @@ function validateSlideData(titulo, imagem_url) {
 
 // Fazer upload da imagem do slide
 async function handleSlideImageUpload(submitBtn) {
+	console.log('🔍 [DEBUG] handleSlideImageUpload chamada, currentSlideImage:', currentSlideImage);
 	if (!currentSlideImage) {
+		console.log('🔍 [DEBUG] Sem imagem nova, retornando:', currentSlide?.imagem_url || '');
 		return currentSlide?.imagem_url || '';
 	}
 
@@ -2130,10 +2190,13 @@ async function handleSlideImageUpload(submitBtn) {
 	submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Enviando imagem...';
 
 	try {
-		return await uploadSlideImage(currentSlideImage);
+		console.log('🔍 [DEBUG] Chamando uploadSlideImage...');
+		const url = await uploadSlideImage(currentSlideImage);
+		console.log('✅ [DEBUG] uploadSlideImage retornou:', url);
+		return url;
 	} catch (error) {
-		console.error('Erro no upload:', error);
-		showToast('Erro ao enviar imagem para o storage', 'error');
+		console.error('❌ [DEBUG] Erro no upload:', error);
+		showToast('Erro ao enviar imagem: ' + (error.message || 'Verifique o console'), 'error');
 		submitBtn.disabled = false;
 		submitBtn.innerHTML = currentSlide ? 'Atualizar Slide' : 'Salvar Slide';
 		throw error;
@@ -2142,7 +2205,9 @@ async function handleSlideImageUpload(submitBtn) {
 
 // Salvar slide (create ou update)
 async function saveSlide() {
+	console.log('🔍 [DEBUG] saveSlide() chamada');
 	const submitBtn = document.getElementById('submit-slide-btn');
+	console.log('🔍 [DEBUG] submitBtn:', submitBtn);
 	if (!submitBtn) return;
 
 	const titulo = document.getElementById('slide-titulo')?.value?.trim() || '';
@@ -2152,16 +2217,22 @@ async function saveSlide() {
 
 	let imagem_url;
 
+	console.log('🔍 [DEBUG] titulo:', titulo, 'currentSlideImage:', currentSlideImage);
+
 	try {
 		imagem_url = await handleSlideImageUpload(submitBtn);
+		console.log('🔍 [DEBUG] imagem_url após upload:', imagem_url);
 	} catch (error) {
-		console.error('Erro ao fazer upload:', error);
+		console.error('❌ [DEBUG] Erro ao fazer upload:', error);
 		return;
 	}
 
 	if (!validateSlideData(titulo, imagem_url)) {
+		console.log('❌ [DEBUG] Validação falhou');
 		return;
 	}
+
+	console.log('✅ [DEBUG] Validação OK, salvando...');
 
 	submitBtn.disabled = true;
 	submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Salvando...';
