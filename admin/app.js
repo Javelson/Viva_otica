@@ -1820,7 +1820,7 @@ const SLIDES_BUCKET = 'banners';
 async function loadSlides() {
 	try {
 		const { data, error } = await globalThis.supabase
-			.from('slides')
+			.from('slideshow')
 			.select('*')
 			.order('ordem', { ascending: true });
 
@@ -2171,14 +2171,14 @@ async function saveSlide() {
 	try {
 		if (currentSlide?.id) {
 			const { error } = await globalThis.supabase
-				.from('slides')
+				.from('slideshow')
 				.update(slideData)
 				.eq('id', currentSlide.id);
 			if (error) throw error;
 			showToast('Slide atualizado com sucesso!', 'success');
 		} else {
 			const { error } = await globalThis.supabase
-				.from('slides')
+				.from('slideshow')
 				.insert([slideData]);
 			if (error) throw error;
 			showToast('Slide criado com sucesso!', 'success');
@@ -2218,7 +2218,7 @@ async function deleteSlideWithImage(id, imageUrl) {
 
 	try {
 		const { error: dbError } = await globalThis.supabase
-			.from('slides')
+			.from('slideshow')
 			.delete()
 			.eq('id', id);
 
